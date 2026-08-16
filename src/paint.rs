@@ -299,7 +299,29 @@ pub fn draw_scroll_indicator(tokens: &Tokens, rect: Rect, content: i32, visible:
 
 /// Height of one row, chosen by whether any row carries a subtitle — the same
 /// rule `xpui`'s `List` measures with.
-fn row_height<'a>(
+/// How many of `rows` will actually be painted into `rect`.
+///
+/// `draw_list` stops before a row that does not fit, so the space it leaves can
+/// be most of a row — 224 pixels on a 480x800 panel. A caller that needs to
+/// know where the list really ends has to ask rather than divide.
+pub fn rows_that_fit<'a>(
+    tokens: &Tokens,
+    rect: Rect,
+    rows: usize,
+    row: &dyn Fn(usize, RowField) -> Option<&'a str>,
+) -> usize {
+    let height = row_height(tokens, rows, row);
+    let stride = height + tokens.list_row_gap;
+    (0..rows)
+        .take_while(|index| {
+            let top = rect.y() + stride * *index as i32;
+            top + height <= rect.y() + rect.height()
+        })
+        .count()
+}
+
+/// The height every row in this list gets.
+pub fn row_height<'a>(
     tokens: &Tokens,
     rows: usize,
     row: &dyn Fn(usize, RowField) -> Option<&'a str>,
