@@ -1,0 +1,21 @@
+[package]
+name = "xpui-chrome"
+description = "Themed components for xpui, painted from drawing primitives alone"
+readme = "README.md"
+keywords = ["ui", "embedded", "no-std", "eink", "xpui"]
+categories = ["embedded", "gui", "no-std"]
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[lib]
+name = "xpui_chrome"
+crate-type = ["rlib"]
+
+[dependencies]
+xpui.workspace = true
+
+[dev-dependencies]
+xpui = { workspace = true, features = ["testing"] }
