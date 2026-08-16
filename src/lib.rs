@@ -46,12 +46,10 @@
 
 extern crate alloc;
 
-mod board;
 mod icons;
 mod paint;
 mod tokens;
 
-pub use board::Board;
 pub use icons::{Icon, draw_icon, icon_size};
 pub use paint::{
     PopupLayout, draw_button_hints, draw_header, draw_list, draw_option_popup, draw_progress_bar,
