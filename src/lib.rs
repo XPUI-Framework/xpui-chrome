@@ -10,7 +10,9 @@
 //!
 //! This crate is that toolkit, once, for all of them.
 //!
-//! ```rust,ignore
+//! ```rust
+//! # struct MyBackend;
+//! # impl MyBackend { fn flush(&self) {} }
 //! use xpui_chrome::Tokens;
 //!
 //! static TOKENS: Tokens = Tokens::DEFAULT;
@@ -54,6 +56,7 @@ pub use icons::{Icon, draw_icon, icon_size};
 pub use paint::{
     PopupLayout, draw_button_hints, draw_header, draw_list, draw_option_popup, draw_progress_bar,
     draw_scroll_indicator, draw_slider, draw_sub_header, option_popup_row_rect, popup_layout,
+    row_height, rows_that_fit,
 };
 pub use tokens::Tokens;
 
@@ -63,10 +66,17 @@ pub use tokens::Tokens;
 /// `request_update` has no sensible default — only the backend knows how to
 /// get pixels onto a panel — so it is the one thing you pass in.
 ///
-/// ```rust,ignore
+/// `tokens` is a closure over the backend too, so one that carries its own can
+/// answer `|backend| &backend.tokens` rather than reaching for a global.
+///
+/// ```rust
+/// # use xpui_chrome::Tokens;
+/// # struct MyBackend;
+/// # impl MyBackend { fn mark_dirty(&self) {} }
+/// # static TOKENS: Tokens = Tokens::DEFAULT;
 /// xpui_chrome::plain_chrome! {
 ///     for MyBackend,
-///     tokens: &TOKENS,
+///     tokens: |_backend| &TOKENS,
 ///     request_update: |backend| backend.mark_dirty(),
 /// }
 /// ```
@@ -191,4 +201,15 @@ macro_rules! __plain_chrome {
 pub mod __private {
     pub use xpui::Rect;
     pub use xpui::host::{Chrome, Hint, RowField, ThemeMetric};
+}
+
+/// The crate's prose, compiled.
+///
+/// A README that does not build is worse than none: this crate's only usage
+/// example passed the wrong form to its own macro for as long as nothing
+/// tried it.
+#[cfg(doctest)]
+mod guides {
+    #[doc = include_str!("../README.md")]
+    pub mod readme {}
 }

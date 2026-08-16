@@ -25,13 +25,15 @@ This is that toolkit, once, for all of them:
 ## Using it
 
 ```rust
+# struct MyBackend;
+# impl MyBackend { fn flush(&self) {} }
 use xpui_chrome::Tokens;
 
 static TOKENS: Tokens = Tokens::DEFAULT;
 
 xpui_chrome::plain_chrome! {
     for MyBackend,
-    tokens: &TOKENS,
+    tokens: |_backend| &TOKENS,
     request_update: |backend| backend.flush(),
 }
 ```
@@ -41,6 +43,11 @@ That macro writes the whole of `Chrome`.
 
 `request_update` is the one thing you pass in, because only a backend knows how
 to get pixels onto a panel.
+
+Both parameters are closures over the backend, not plain values. `tokens` is
+one so a backend carrying its own can answer `|backend| &backend.tokens`: two
+backends in one process may be driving two different panels, and a global would
+give them one theme between them.
 
 Every method is also a plain function, so a backend with *some* components of
 its own can take only the ones it lacks — which is what the FreeInkUI backend
