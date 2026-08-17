@@ -7,7 +7,7 @@ use xpui::{Font, Rect, Renderer};
 use super::text::{centred_y, draw_truncated};
 use crate::tokens::Tokens;
 
-/// The four hints along the bottom, one per quarter.
+/// The hints along the bottom, one per key the board says it has.
 pub fn draw_button_hints(
     tokens: &Tokens,
     back: &Hint,
@@ -15,6 +15,14 @@ pub fn draw_button_hints(
     previous: &Hint,
     next: &Hint,
 ) {
+    // A board whose keys are not a row along the bottom reserves no band, and
+    // there is nothing to draw in it. Labelling keys that are not there is
+    // worse than labelling none: it tells you to press something the device
+    // does not have.
+    if tokens.button_hints_height <= 0 {
+        return;
+    }
+
     let size = Renderer::screen_size();
     let band = Rect::new(
         0,
@@ -30,14 +38,27 @@ pub fn draw_button_hints(
         xpui::Point::new(size.width - 1, band.y()),
     );
 
-    let slot_width = band.width() / 4;
+    // A three-key board has no key for Back — it is a double press of the
+    // first — so its slots start at Confirm and its labels start with them.
+    let three = tokens.hint_slots == 3;
+    let hints: &[&Hint] = if three {
+        &[confirm, previous, next]
+    } else {
+        &[back, confirm, previous, next]
+    };
+
+    // The band is divided by the keys the board *has*, not by the labels there
+    // are to write. A board with five keys and four things to say leaves the
+    // last slot blank; dividing by four instead would slide every label off the
+    // key it names.
+    let slot_width = band.width() / tokens.hint_slots.max(1) as i32;
     let y = centred_y(band, font);
 
-    for (index, hint) in [back, confirm, previous, next].into_iter().enumerate() {
+    for (index, hint) in hints.iter().enumerate().take(tokens.hint_slots as usize) {
         // `None` from `label()` means "your own standard label for this slot";
         // `Some("")` means the screen asked for it to be blank.
         let label = match hint.label() {
-            None => tokens.standard_hints[index],
+            None => tokens.standard_hints[if three { index + 1 } else { index }],
             Some("") => continue,
             Some(text) => text,
         };

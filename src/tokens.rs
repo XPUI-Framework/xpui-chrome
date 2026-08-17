@@ -75,6 +75,17 @@ pub struct Tokens {
     /// crate has no idea what language its user reads. The defaults are
     /// English because something has to be.
     pub standard_hints: [&'static str; 4],
+    /// How many keys the row along the bottom actually has.
+    ///
+    /// Four is a reader: Back, Confirm, and a pair that walks the list. Three
+    /// is a badge, whose keys are labelled a, b and c — there is no key for
+    /// Back, so Confirm takes the first slot and Back lives on a double press
+    /// of it.
+    ///
+    /// Drawing four hints over three keys is worse than drawing none: it tells
+    /// you to press something that is not there, and every label after the
+    /// first sits over the wrong key.
+    pub hint_slots: u8,
 }
 
 impl Tokens {
@@ -110,6 +121,7 @@ impl Tokens {
         dialog_width_percent: 80,
 
         standard_hints: ["Back", "Select", "Up", "Down"],
+        hint_slots: 4,
     };
 
     /// For a panel of roughly 320x240 — a Tufty 2040, or any small colour LCD.
@@ -149,6 +161,7 @@ impl Tokens {
         dialog_width_percent: 88,
 
         standard_hints: ["Back", "OK", "Up", "Down"],
+        hint_slots: 4,
     };
 
     /// For a panel of roughly 296x128 — a Badger 2040, or any small e-ink strip.
@@ -194,6 +207,7 @@ impl Tokens {
         // Two of the five buttons on these boards are Up and Down; the labels
         // have to fit a quarter of a 296-pixel strip in a 6-pixel font.
         standard_hints: ["Back", "OK", "Up", "Dn"],
+        hint_slots: 4,
     };
 
     /// The same chrome, sized for a board that asks for larger targets.
@@ -210,6 +224,31 @@ impl Tokens {
     /// ratio pushes the dialog past the edge it is measured against; and
     /// [`standard_hints`] are words.
     ///
+    /// The same chrome, for a device whose bottom row has `keys` keys.
+    ///
+    /// Three is a badge: a, b and c, with no key of its own for Back.
+    pub const fn with_hint_slots(&self, keys: u8) -> Tokens {
+        let mut tokens = *self;
+        tokens.hint_slots = keys;
+        tokens
+    }
+
+    /// The same chrome with no band reserved for button hints.
+    ///
+    /// For a device whose Back and Confirm come from its touchscreen rather
+    /// than from a row of keys along the bottom. The firmware's own themes
+    /// return before drawing a single hint on those boards, for the same
+    /// reason: a hint names a key, and naming one that is not there sends a
+    /// person looking for it.
+    ///
+    /// The height is the reservation as well as the drawing, so the content
+    /// gains the space rather than leaving a gap where the band would be.
+    pub const fn without_button_hints(&self) -> Tokens {
+        let mut tokens = *self;
+        tokens.button_hints_height = 0;
+        tokens
+    }
+
     /// [`dialog_width_percent`]: Tokens::dialog_width_percent
     /// [`standard_hints`]: Tokens::standard_hints
     pub const fn scaled(&self, percent: u16) -> Tokens {
@@ -244,6 +283,7 @@ impl Tokens {
             dialog_width_percent: self.dialog_width_percent,
 
             standard_hints: self.standard_hints,
+            hint_slots: self.hint_slots,
         }
     }
 
