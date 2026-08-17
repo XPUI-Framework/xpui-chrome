@@ -865,6 +865,83 @@ fn chrome_never_costs_more_than_half_a_small_panel() {
     );
 }
 
+// -- scaling for a board that wants bigger targets --------------------------
+
+/// A board that asks for no change must get none. `scaled(100)` runs over
+/// every field, and rounding that is off by one somewhere would move chrome on
+/// boards that never opted into anything.
+#[test]
+fn scaling_by_one_hundred_changes_nothing() {
+    for (name, tokens) in [
+        ("DEFAULT", Tokens::DEFAULT),
+        ("COMPACT", Tokens::COMPACT),
+        ("SMALL", Tokens::SMALL),
+    ] {
+        assert_eq!(tokens.scaled(100), tokens, "{name} moved at 100%");
+    }
+}
+
+/// What the scale is for: a row, a header, a hint band and a touch target all
+/// grow together. One of them left behind is a layout that no longer adds up.
+#[test]
+fn scaling_grows_every_band_together() {
+    let plain = Tokens::DEFAULT;
+    let scaled = plain.scaled(120);
+
+    for (name, before, after) in [
+        ("row", plain.list_row_height, scaled.list_row_height),
+        ("header", plain.header_height, scaled.header_height),
+        (
+            "hints",
+            plain.button_hints_height,
+            scaled.button_hints_height,
+        ),
+        ("touch target", plain.min_touch_size, scaled.min_touch_size),
+        (
+            "side padding",
+            plain.content_side_padding,
+            scaled.content_side_padding,
+        ),
+    ] {
+        assert!(
+            after > before,
+            "the {name} stayed at {before} while the rest of the chrome grew"
+        );
+    }
+
+    assert_eq!(
+        scaled.list_row_height, 48,
+        "a 40px row at 120% is 48, which is the number the firmware's board \
+         table describes"
+    );
+}
+
+/// A ratio is not a pixel count. Scaling `dialog_width_percent` would push a
+/// dialog past the panel it is measured against — 80% of the width becomes 96%
+/// once, and over 100% on any board that ever wants more.
+#[test]
+fn scaling_leaves_what_is_not_a_pixel_alone() {
+    let scaled = Tokens::DEFAULT.scaled(120);
+
+    assert_eq!(
+        scaled.dialog_width_percent,
+        Tokens::DEFAULT.dialog_width_percent
+    );
+    assert_eq!(scaled.standard_hints, Tokens::DEFAULT.standard_hints);
+}
+
+/// A hairline is one pixel and cannot become none: a rule scaled to zero stops
+/// being drawn, and a row gap of zero is a list whose rows touch.
+#[test]
+fn a_single_pixel_survives_being_scaled_down() {
+    let tiny = Tokens::SMALL.scaled(10);
+
+    assert!(
+        tiny.scrollbar_inset >= 1 && tiny.dialog_border >= 1 && tiny.list_row_gap >= 1,
+        "something rounded away to nothing: {tiny:?}"
+    );
+}
+
 /// Every preset has to be internally coherent, whatever its size: the small
 /// step smaller than the standard one, a taller row for a subtitle, a knob
 /// that fits its own track.
@@ -874,6 +951,13 @@ fn every_preset_is_internally_consistent() {
         ("DEFAULT", Tokens::DEFAULT),
         ("COMPACT", Tokens::COMPACT),
         ("SMALL", Tokens::SMALL),
+        // And each of them as a touch board scales it. A preset that is
+        // coherent at 100 and incoherent at 120 breaks on hardware, where
+        // rounding decides whether the small step is still smaller than the
+        // standard one.
+        ("DEFAULT scaled", Tokens::DEFAULT.scaled(120)),
+        ("COMPACT scaled", Tokens::COMPACT.scaled(120)),
+        ("SMALL scaled", Tokens::SMALL.scaled(120)),
     ] {
         assert!(
             tokens.spacing_small < tokens.vertical_spacing,

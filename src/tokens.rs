@@ -196,6 +196,57 @@ impl Tokens {
         standard_hints: ["Back", "OK", "Up", "Dn"],
     };
 
+    /// The same chrome, sized for a board that asks for larger targets.
+    ///
+    /// `percent` is a board's UI scale: 100 leaves every number alone, 120
+    /// turns a 40px row into 48. An integer percentage rather than a float
+    /// because `Tokens` is `Eq` and every preset is a `const` — neither of
+    /// which an `f32` allows — and because the device targets have no
+    /// floating-point unit, so a multiply by 1.2 there is a soft-float call in
+    /// code every layout pass runs.
+    ///
+    /// Everything counted in pixels scales. Two fields do not:
+    /// [`dialog_width_percent`] is already a ratio of the panel, and scaling a
+    /// ratio pushes the dialog past the edge it is measured against; and
+    /// [`standard_hints`] are words.
+    ///
+    /// [`dialog_width_percent`]: Tokens::dialog_width_percent
+    /// [`standard_hints`]: Tokens::standard_hints
+    pub const fn scaled(&self, percent: u16) -> Tokens {
+        Tokens {
+            top_padding: scale(self.top_padding, percent),
+            header_height: scale(self.header_height, percent),
+            vertical_spacing: scale(self.vertical_spacing, percent),
+            spacing_small: scale(self.spacing_small, percent),
+            button_hints_height: scale(self.button_hints_height, percent),
+            content_side_padding: scale(self.content_side_padding, percent),
+
+            list_row_height: scale(self.list_row_height, percent),
+            list_row_height_with_subtitle: scale(self.list_row_height_with_subtitle, percent),
+            list_row_gap: scale(self.list_row_gap, percent),
+            selection_marker_width: scale(self.selection_marker_width, percent),
+
+            sub_header_height: scale(self.sub_header_height, percent),
+
+            progress_bar_height: scale(self.progress_bar_height, percent),
+            min_touch_size: scale(self.min_touch_size, percent),
+
+            slider_knob_width: scale(self.slider_knob_width, percent),
+            slider_knob_height: scale(self.slider_knob_height, percent),
+            slider_side_inset: scale(self.slider_side_inset, percent),
+            slider_track_height: scale(self.slider_track_height, percent),
+
+            scrollbar_width: scale(self.scrollbar_width, percent),
+            scrollbar_inset: scale(self.scrollbar_inset, percent),
+
+            dialog_border: scale(self.dialog_border, percent),
+            dialog_padding: scale(self.dialog_padding, percent),
+            dialog_width_percent: self.dialog_width_percent,
+
+            standard_hints: self.standard_hints,
+        }
+    }
+
     /// The preset that fits a panel of this size.
     ///
     /// Chosen by height, because that is what the chrome eats: a header and a
@@ -280,4 +331,17 @@ impl Default for Tokens {
     fn default() -> Self {
         Tokens::DEFAULT
     }
+}
+
+/// One metric, scaled by a percentage and rounded to the nearest pixel.
+///
+/// A number that was worth a pixel stays worth one: a 1px rule scaled to 0 is
+/// a rule that quietly stops being drawn, and a 0px gap is a list whose rows
+/// touch.
+const fn scale(value: i32, percent: u16) -> i32 {
+    if value <= 0 {
+        return value;
+    }
+    let scaled = (value * percent as i32 + 50) / 100;
+    if scaled < 1 { 1 } else { scaled }
 }
