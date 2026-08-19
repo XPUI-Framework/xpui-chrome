@@ -48,6 +48,7 @@ extern crate alloc;
 
 mod icons;
 mod paint;
+mod row;
 mod tokens;
 
 pub use icons::{Icon, draw_icon, icon_size};
@@ -56,6 +57,7 @@ pub use paint::{
     draw_scroll_indicator, draw_slider, draw_sub_header, option_popup_row_rect, popup_layout,
     row_height, rows_that_fit,
 };
+pub use row::{READER_ROW, RowKey};
 pub use tokens::Tokens;
 
 /// Writes a complete [`Chrome`](xpui::host::Chrome) implementation for a

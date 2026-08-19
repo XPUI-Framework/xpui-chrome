@@ -5,6 +5,7 @@ use xpui::host::Hint;
 use xpui::{Font, Rect, Renderer};
 
 use super::text::{centred_y, draw_truncated};
+use crate::row::RowKey;
 use crate::tokens::Tokens;
 
 /// The hints along the bottom, one per key the board says it has.
@@ -38,43 +39,49 @@ pub fn draw_button_hints(
         xpui::Point::new(size.width - 1, band.y()),
     );
 
-    // A three-key board has no key for Back — it is a double press of the
-    // first — so its slots start at Confirm and its labels start with them.
-    let three = tokens.hint_slots == 3;
-    let hints: &[&Hint] = if three {
-        &[confirm, previous, next]
-    } else {
-        &[back, confirm, previous, next]
-    };
-
-    // The band is divided by the keys the board *has*, not by the labels there
-    // are to write. A board with five keys and four things to say leaves the
-    // last slot blank; dividing by four instead would slide every label off the
-    // key it names.
-    let slot_width = band.width() / tokens.hint_slots.max(1) as i32;
+    // The band is divided by the keys the board *has*, which is the length of
+    // its row. A board with five keys and four things to say leaves the last
+    // slot blank; dividing by four instead would slide every label off the key
+    // it names.
+    let slot_width = band.width() / tokens.row.len().max(1) as i32;
     let y = centred_y(band, font);
 
-    for (index, hint) in hints.iter().enumerate().take(tokens.hint_slots as usize) {
+    for (index, key) in tokens.row.iter().enumerate() {
+        // What the screen said about *this* key, not about this position. A
+        // row that omits Back must not shift Back's hint onto Confirm's key,
+        // which is the bug this indirection exists to prevent.
+        let Some(slot) = key.hint_index() else {
+            // A key the board has and nothing is mapped to.
+            continue;
+        };
+        let hint = match key {
+            RowKey::Back => back,
+            RowKey::Confirm => confirm,
+            RowKey::Previous => previous,
+            RowKey::Next => next,
+            RowKey::Unassigned => continue,
+        };
+
         // `None` from `label()` means "your own standard label for this slot";
         // `Some("")` means the screen asked for it to be blank.
         let label = match hint.label() {
-            None => tokens.standard_hints[if three { index + 1 } else { index }],
+            None => tokens.standard_hints[slot],
             Some("") => continue,
             Some(text) => text,
         };
-        let slot = Rect::new(
+        let area = Rect::new(
             band.x() + slot_width * index as i32,
             band.y(),
             slot_width,
             band.height(),
         );
-        let text_width = font.text_width(label).min(slot.width());
+        let text_width = font.text_width(label).min(area.width());
         draw_truncated(
-            slot.x() + (slot.width() - text_width) / 2,
+            area.x() + (area.width() - text_width) / 2,
             y,
             label,
             font,
-            slot.width() - tokens.spacing_small,
+            area.width() - tokens.spacing_small,
         );
     }
 }

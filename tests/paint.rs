@@ -6,9 +6,17 @@
 use xpui::host::{Chrome, Hint, RowField};
 use xpui::testing::{self, DrawOp, RectKind};
 use xpui::{Rect, Renderer};
-use xpui_chrome::Tokens;
+use xpui_chrome::{RowKey, Tokens};
 
 const TOKENS: Tokens = Tokens::DEFAULT;
+
+/// Three keys along the bottom, and one of them is Back.
+///
+/// The arrangement both Pimoroni boards have. It was inexpressible while the
+/// painter took a three-key row to mean "no Back key", which is the fault
+/// [`a_three_key_row_with_back_labels_its_own_keys`] pins.
+const BADGE_TOKENS: Tokens =
+    Tokens::DEFAULT.with_row(&[RowKey::Back, RowKey::Confirm, RowKey::Unassigned]);
 
 /// A backend that is nothing but the fake host, wearing this crate's `Chrome`.
 ///
@@ -19,6 +27,15 @@ struct Plain;
 xpui_chrome::plain_chrome! {
     for Plain,
     tokens: |_backend| &TOKENS,
+    request_update: |_backend| {},
+}
+
+/// The same, wearing a badge's three-key row.
+struct Badge;
+
+xpui_chrome::plain_chrome! {
+    for Badge,
+    tokens: |_backend| &BADGE_TOKENS,
     request_update: |_backend| {},
 }
 
@@ -327,6 +344,71 @@ fn hint_slots_distinguish_standard_from_blank() {
         "Text drew the screen's"
     );
     assert_eq!(drawn.len(), 2, "and the two blanked slots drew nothing");
+}
+
+/// A three-key row that has a Back key labels its own keys, in its own order.
+///
+/// The bug this replaces: a row of three was taken to *mean* a badge with no
+/// Back key, so the painter dropped Back and started at Confirm. On these
+/// boards that put "Select" over the Back key, "Up" over Confirm and "Down"
+/// over a key that does nothing — every label one place to the left of the key
+/// it named.
+///
+/// Positions, not just presence: a label in the drawn set proves nothing if it
+/// is sitting over the wrong key, and that is the exact failure.
+#[test]
+fn a_three_key_row_with_back_labels_its_own_keys() {
+    testing::install();
+    testing::reset();
+    Badge.draw_button_hints(
+        &Hint::Standard,
+        &Hint::Standard,
+        &Hint::Standard,
+        &Hint::Standard,
+    );
+
+    let drawn = testing::drawn_text();
+    let slot = Renderer::screen_size().width / 3;
+
+    assert_eq!(
+        drawn.len(),
+        2,
+        "two keys have a job and the third has none: {drawn:?}"
+    );
+
+    let (x, _, text, _, _) = &drawn[0];
+    assert_eq!(text, "Back", "the first key is Back, and says so");
+    assert!(
+        (0..slot).contains(x),
+        "Back sits over the first key, not the second: x={x}, slot width {slot}"
+    );
+
+    let (x, _, text, _, _) = &drawn[1];
+    assert_eq!(text, "Select", "the second key confirms");
+    assert!(
+        (slot..slot * 2).contains(x),
+        "Confirm sits over the second key: x={x}, slot width {slot}"
+    );
+
+    // Again with a distinct label per slot. The pass above cannot tell which
+    // `Hint` reached which key, because `Standard` resolves through the row
+    // either way — so routing the screen's own words is checked separately.
+    testing::reset();
+    Badge.draw_button_hints(
+        &Hint::text("MINE-BACK"),
+        &Hint::text("MINE-OK"),
+        &Hint::text("MINE-PREV"),
+        &Hint::text("MINE-NEXT"),
+    );
+    let drawn: Vec<String> = testing::drawn_text()
+        .into_iter()
+        .map(|(_, _, text, _, _)| text)
+        .collect();
+    assert_eq!(
+        drawn,
+        vec!["MINE-BACK".to_string(), "MINE-OK".to_string()],
+        "each key gets the hint for its own job, and the spare key none"
+    );
 }
 
 #[test]

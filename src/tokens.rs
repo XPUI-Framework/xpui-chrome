@@ -8,6 +8,8 @@
 use xpui::host::ThemeMetric;
 use xpui::{Font, Renderer};
 
+use crate::row::{READER_ROW, RowKey};
+
 /// Geometry for the components in this crate.
 ///
 /// Every field is a pixel count. The defaults suit a portrait e-ink panel of
@@ -75,17 +77,19 @@ pub struct Tokens {
     /// crate has no idea what language its user reads. The defaults are
     /// English because something has to be.
     pub standard_hints: [&'static str; 4],
-    /// How many keys the row along the bottom actually has.
+    /// What each key along the bottom edge means, left to right.
     ///
-    /// Four is a reader: Back, Confirm, and a pair that walks the list. Three
-    /// is a badge, whose keys are labelled a, b and c — there is no key for
-    /// Back, so Confirm takes the first slot and Back lives on a double press
-    /// of it.
+    /// Its length is how many keys the row has, so this answers both questions
+    /// a hint bar asks — how many slots to divide the band into, and which
+    /// word goes in each. They used to be one question, inferred from the
+    /// count: three keys was taken to mean a badge with no key for Back. That
+    /// held until a board arrived with three keys *and* a Back among them, and
+    /// every label after the first sat over the wrong key.
     ///
-    /// Drawing four hints over three keys is worse than drawing none: it tells
-    /// you to press something that is not there, and every label after the
-    /// first sits over the wrong key.
-    pub hint_slots: u8,
+    /// Naming a key the device does not have is worse than naming none — it
+    /// sends a person looking for it — so a slot with nothing behind it is
+    /// [`RowKey::Unassigned`] and stays blank.
+    pub row: &'static [RowKey],
 }
 
 impl Tokens {
@@ -121,7 +125,7 @@ impl Tokens {
         dialog_width_percent: 80,
 
         standard_hints: ["Back", "Select", "Up", "Down"],
-        hint_slots: 4,
+        row: READER_ROW,
     };
 
     /// For a panel of roughly 320x240 — a Tufty 2040, or any small colour LCD.
@@ -161,7 +165,7 @@ impl Tokens {
         dialog_width_percent: 88,
 
         standard_hints: ["Back", "OK", "Up", "Down"],
-        hint_slots: 4,
+        row: READER_ROW,
     };
 
     /// For a panel of roughly 296x128 — a Badger 2040, or any small e-ink strip.
@@ -207,7 +211,7 @@ impl Tokens {
         // Two of the five buttons on these boards are Up and Down; the labels
         // have to fit a quarter of a 296-pixel strip in a 6-pixel font.
         standard_hints: ["Back", "OK", "Up", "Dn"],
-        hint_slots: 4,
+        row: READER_ROW,
     };
 
     /// The same chrome, sized for a board that asks for larger targets.
@@ -224,12 +228,18 @@ impl Tokens {
     /// ratio pushes the dialog past the edge it is measured against; and
     /// [`standard_hints`] are words.
     ///
-    /// The same chrome, for a device whose bottom row has `keys` keys.
+    /// The same chrome, for a device whose bottom row is not a reader's four.
     ///
-    /// Three is a badge: a, b and c, with no key of its own for Back.
-    pub const fn with_hint_slots(&self, keys: u8) -> Tokens {
+    /// ```text
+    /// // A badge: three keys, the last with nothing on it yet.
+    /// Tokens::SMALL.with_row(&[RowKey::Back, RowKey::Confirm, RowKey::Unassigned])
+    /// ```
+    ///
+    /// Giving that third key a job later is this one line, which is the point
+    /// of the row being data rather than a rule inside the painter.
+    pub const fn with_row(&self, row: &'static [RowKey]) -> Tokens {
         let mut tokens = *self;
-        tokens.hint_slots = keys;
+        tokens.row = row;
         tokens
     }
 
@@ -283,7 +293,7 @@ impl Tokens {
             dialog_width_percent: self.dialog_width_percent,
 
             standard_hints: self.standard_hints,
-            hint_slots: self.hint_slots,
+            row: self.row,
         }
     }
 
