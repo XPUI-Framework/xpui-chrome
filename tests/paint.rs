@@ -5,7 +5,7 @@
 
 use xpui::host::{Chrome, Hint, RowField};
 use xpui::testing::{self, DrawOp, RectKind};
-use xpui::{Rect, Renderer};
+use xpui::{Font, Rect, Renderer};
 use xpui_chrome::{RowKey, Tokens};
 
 const TOKENS: Tokens = Tokens::DEFAULT;
@@ -15,8 +15,15 @@ const TOKENS: Tokens = Tokens::DEFAULT;
 /// The arrangement both Pimoroni boards have. It was inexpressible while the
 /// painter took a three-key row to mean "no Back key", which is the fault
 /// [`a_three_key_row_with_back_labels_its_own_keys`] pins.
+/// Confirm **first**, Back second — deliberately not any real board's order.
+///
+/// A row in canonical order cannot tell a painter that reads `RowKey` from one
+/// that just walks its slots, because position and job coincide. This one can:
+/// a positional painter puts Back over slot 0 and gets it backwards. The
+/// Pimoroni boards use `[Back, Confirm, Unassigned]`, which is why the fixture
+/// cannot.
 const BADGE_TOKENS: Tokens =
-    Tokens::DEFAULT.with_row(&[RowKey::Back, RowKey::Confirm, RowKey::Unassigned]);
+    Tokens::DEFAULT.with_row(&[RowKey::Confirm, RowKey::Back, RowKey::Unassigned]);
 
 /// A backend that is nothing but the fake host, wearing this crate's `Chrome`.
 ///
@@ -30,7 +37,7 @@ xpui_chrome::plain_chrome! {
     request_update: |_backend| {},
 }
 
-/// The same, wearing a badge's three-key row.
+/// The same, wearing a three-key row that is not in canonical order.
 struct Badge;
 
 xpui_chrome::plain_chrome! {
@@ -346,18 +353,18 @@ fn hint_slots_distinguish_standard_from_blank() {
     assert_eq!(drawn.len(), 2, "and the two blanked slots drew nothing");
 }
 
-/// A three-key row that has a Back key labels its own keys, in its own order.
+/// A row labels its keys by what each one does, not by where it sits.
 ///
 /// The bug this replaces: a row of three was taken to *mean* a badge with no
-/// Back key, so the painter dropped Back and started at Confirm. On these
-/// boards that put "Select" over the Back key, "Up" over Confirm and "Down"
-/// over a key that does nothing — every label one place to the left of the key
-/// it named.
+/// Back key, so the painter dropped Back and started at Confirm — every label
+/// one place left of the key it named.
 ///
-/// Positions, not just presence: a label in the drawn set proves nothing if it
-/// is sitting over the wrong key, and that is the exact failure.
+/// The fixture row is deliberately out of canonical order, because that is the
+/// only arrangement that can tell the two painters apart. Mutation that must
+/// go red: replace the `RowKey` match with `[back, confirm, previous, next]`
+/// indexed by slot.
 #[test]
-fn a_three_key_row_with_back_labels_its_own_keys() {
+fn a_row_labels_its_keys_by_job_not_by_position() {
     testing::install();
     testing::reset();
     Badge.draw_button_hints(
@@ -369,6 +376,7 @@ fn a_three_key_row_with_back_labels_its_own_keys() {
 
     let drawn = testing::drawn_text();
     let slot = Renderer::screen_size().width / 3;
+    let font = Font::ui_small();
 
     assert_eq!(
         drawn.len(),
@@ -376,19 +384,21 @@ fn a_three_key_row_with_back_labels_its_own_keys() {
         "two keys have a job and the third has none: {drawn:?}"
     );
 
-    let (x, _, text, _, _) = &drawn[0];
-    assert_eq!(text, "Back", "the first key is Back, and says so");
-    assert!(
-        (0..slot).contains(x),
-        "Back sits over the first key, not the second: x={x}, slot width {slot}"
-    );
+    // The row is [Confirm, Back, Unassigned], so Select comes first.
+    for (index, expected) in [(0, "Select"), (1, "Back")] {
+        let (x, _, text, _, _) = &drawn[index];
+        assert_eq!(text, expected, "slot {index} names the key's own job");
 
-    let (x, _, text, _, _) = &drawn[1];
-    assert_eq!(text, "Select", "the second key confirms");
-    assert!(
-        (slot..slot * 2).contains(x),
-        "Confirm sits over the second key: x={x}, slot width {slot}"
-    );
+        // A relationship, not a range: the label's centre sits at its slot's
+        // centre. `(0..slot).contains(x)` passed a 72-pixel drift, which puts a
+        // label straddling the boundary between two keys.
+        let centre = x + font.text_width(text) / 2;
+        let want = slot * index as i32 + slot / 2;
+        assert!(
+            (centre - want).abs() <= 1,
+            "slot {index}: {text:?} is centred at {centre}, its key at {want}"
+        );
+    }
 
     // Again with a distinct label per slot. The pass above cannot tell which
     // `Hint` reached which key, because `Standard` resolves through the row
@@ -406,8 +416,8 @@ fn a_three_key_row_with_back_labels_its_own_keys() {
         .collect();
     assert_eq!(
         drawn,
-        vec!["MINE-BACK".to_string(), "MINE-OK".to_string()],
-        "each key gets the hint for its own job, and the spare key none"
+        vec!["MINE-OK".to_string(), "MINE-BACK".to_string()],
+        "each key gets the hint for its own job, in the row's order"
     );
 }
 

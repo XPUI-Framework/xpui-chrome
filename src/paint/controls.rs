@@ -47,25 +47,21 @@ pub fn draw_button_hints(
     let y = centred_y(band, font);
 
     for (index, key) in tokens.row.iter().enumerate() {
-        // What the screen said about *this* key, not about this position. A
-        // row that omits Back must not shift Back's hint onto Confirm's key,
-        // which is the bug this indirection exists to prevent.
-        let Some(slot) = key.hint_index() else {
-            // A key the board has and nothing is mapped to.
-            continue;
-        };
-        let hint = match key {
-            RowKey::Back => back,
-            RowKey::Confirm => confirm,
-            RowKey::Previous => previous,
-            RowKey::Next => next,
+        // What the screen said about *this* key, not about this position. A row
+        // that omits Back must not shift Back's hint onto Confirm's key, which
+        // is the bug this indirection exists to prevent.
+        let (hint, standard) = match key {
+            RowKey::Back => (back, tokens.standard_hints[0]),
+            RowKey::Confirm => (confirm, tokens.standard_hints[1]),
+            RowKey::Previous => (previous, tokens.standard_hints[2]),
+            RowKey::Next => (next, tokens.standard_hints[3]),
             RowKey::Unassigned => continue,
         };
 
         // `None` from `label()` means "your own standard label for this slot";
         // `Some("")` means the screen asked for it to be blank.
         let label = match hint.label() {
-            None => tokens.standard_hints[slot],
+            None => standard,
             Some("") => continue,
             Some(text) => text,
         };

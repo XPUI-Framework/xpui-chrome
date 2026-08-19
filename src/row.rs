@@ -25,21 +25,9 @@ pub enum RowKey {
     Previous,
     /// Walks the list forwards. `Down` on a reader.
     Next,
-    /// A key the board has and nothing is mapped to. Drawn blank.
+    /// A key with no word in the hint vocabulary — either nothing is mapped to
+    /// it, or what is has no label, as a Power key does. Drawn blank.
     Unassigned,
-}
-
-impl RowKey {
-    /// Which of [`Tokens::standard_hints`] names this key, if any.
-    pub const fn hint_index(self) -> Option<usize> {
-        match self {
-            RowKey::Back => Some(0),
-            RowKey::Confirm => Some(1),
-            RowKey::Previous => Some(2),
-            RowKey::Next => Some(3),
-            RowKey::Unassigned => None,
-        }
-    }
 }
 
 /// The row every board had before any of them said otherwise: a reader's four
