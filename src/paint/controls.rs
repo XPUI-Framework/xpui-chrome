@@ -1,7 +1,7 @@
 //! The components that show a value: hints, a progress bar, a slider and a
 //! scroll indicator.
 
-use xpui::host::Hint;
+use xpui::host::{ControlState, Hint, HintWord};
 use xpui::{Font, Rect, Renderer};
 
 use super::text::{centred_y, draw_truncated};
@@ -58,10 +58,16 @@ pub fn draw_button_hints(
             RowKey::Unassigned => continue,
         };
 
-        // `None` from `label()` means "your own standard label for this slot";
-        // `Some("")` means the screen asked for it to be blank.
+        // `None` from `label()` means "a word of your own", and `word()` says
+        // which: the slot's own by default, or one of the three a value
+        // control's mode needs. `Some("")` means the screen asked for blank.
         let label = match hint.label() {
-            None => standard,
+            None => match hint.word() {
+                HintWord::Standard => standard,
+                HintWord::Edit => tokens.mode_hints[0],
+                HintWord::Done => tokens.mode_hints[1],
+                HintWord::Cancel => tokens.mode_hints[2],
+            },
             Some("") => continue,
             Some(text) => text,
         };
@@ -128,8 +134,23 @@ fn slider_knob(tokens: &Tokens, rect: Rect, value: i32, max: i32) -> Rect {
     )
 }
 
-/// Track, fill and knob.
-pub fn draw_slider(tokens: &Tokens, rect: Rect, value: i32, max: i32) {
+/// Track, fill and knob — and, when the keys are on it, the knob says so.
+///
+/// The three states have to be told apart at a glance on one bit of colour.
+/// The knob carries the first difference, because it is the one part of the
+/// control still painted paper: idle leaves it so, and focus fills it with a
+/// dither. An open control adds one outline on top of that. A device with no
+/// Left/Right pair changes what four keys mean when a value opens, and this is
+/// the only thing that says so.
+///
+/// **Two other marks were built and rejected by eye.** A bar down the leading
+/// edge lands where a stepper draws its `-` and reads as part of the glyph; a
+/// box around a wide, mostly empty control is the heaviest thing on the panel.
+/// And a second *shade* for the track is not available at all —
+/// `fill_rect_dither`'s flag is a parity, not a density, so both of its values
+/// are the same 50% checkerboard on opposite squares. That is what left the
+/// knob as the only place with a change of shade still in it.
+pub fn draw_slider(tokens: &Tokens, rect: Rect, value: i32, max: i32, state: ControlState) {
     if max <= 0 || rect.width() <= 0 || rect.height() <= 0 {
         // No range means no position to show. `Slider` guards this too, but
         // these functions are public and a backend may call them directly.
@@ -156,9 +177,21 @@ pub fn draw_slider(tokens: &Tokens, rect: Rect, value: i32, max: i32) {
         );
     }
 
-    // Cleared before it is outlined, so the track does not show through.
-    Renderer::fill_rect(knob, false);
+    // **The knob carries the selection**, for the reasons on `draw_slider`.
+    // Filled before it is outlined either way, so the track does not show
+    // through.
+    if state == ControlState::Idle {
+        Renderer::fill_rect(knob, false);
+    } else {
+        Renderer::fill_rect_dither(knob, true);
+    }
     Renderer::stroke_rect(knob);
+
+    // An open control adds one outline. The knob's shade already says the keys
+    // are here; this says they are *moving the value*.
+    if state == ControlState::Editing {
+        Renderer::stroke_rect(rect);
+    }
 }
 
 /// A thumb down the right edge, proportional to how much is showing.

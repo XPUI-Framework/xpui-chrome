@@ -3,7 +3,7 @@
 //! These paint through `xpui`'s fake host, which records every primitive, so
 //! each assertion is about pixels-as-drawn rather than about intent.
 
-use xpui::host::{Chrome, Hint, RowField};
+use xpui::host::{Chrome, ControlState, Hint, RowField};
 use xpui::testing::{self, DrawOp, RectKind};
 use xpui::{Font, Rect, Renderer};
 use xpui_chrome::{RowKey, Tokens};
@@ -25,6 +25,15 @@ const TOKENS: Tokens = Tokens::DEFAULT;
 const BADGE_TOKENS: Tokens =
     Tokens::DEFAULT.with_row(&[RowKey::Confirm, RowKey::Back, RowKey::Unassigned]);
 
+/// A board that supplies its own words for the mode.
+///
+/// Not English, so a framework that hard-coded "Edit" anywhere would be visible
+/// here rather than hiding behind a default that happens to match.
+const TRANSLATED_TOKENS: Tokens = Tokens {
+    mode_hints: ["Ajustar", "Pronto", "Cancelar"],
+    ..Tokens::DEFAULT
+};
+
 /// A backend that is nothing but the fake host, wearing this crate's `Chrome`.
 ///
 /// It exists to prove the macro produces a real `Chrome` impl, and that the
@@ -43,6 +52,14 @@ struct Badge;
 xpui_chrome::plain_chrome! {
     for Badge,
     tokens: |_backend| &BADGE_TOKENS,
+    request_update: |_backend| {},
+}
+
+struct Translated;
+
+xpui_chrome::plain_chrome! {
+    for Translated,
+    tokens: |_backend| &TRANSLATED_TOKENS,
     request_update: |_backend| {},
 }
 
@@ -353,6 +370,65 @@ fn hint_slots_distinguish_standard_from_blank() {
     assert_eq!(drawn.len(), 2, "and the two blanked slots drew nothing");
 }
 
+/// Edit, Done and Cancel are the board's words, exactly as Back and Select are.
+///
+/// The framework says *which* word it wants and never what it is: it does not
+/// know what language the reader uses. A board that supplies its own gets its
+/// own, and this asserts that with words no default could produce by accident.
+#[test]
+fn the_mode_words_come_from_the_board() {
+    testing::install();
+    testing::reset();
+    Translated.draw_button_hints(&Hint::Cancel, &Hint::Done, &Hint::Edit, &Hint::None);
+
+    let drawn: Vec<String> = testing::drawn_text()
+        .into_iter()
+        .map(|(_, _, text, _, _)| text)
+        .collect();
+
+    assert!(drawn.contains(&"Cancelar".to_string()), "Cancel: {drawn:?}");
+    assert!(drawn.contains(&"Pronto".to_string()), "Done: {drawn:?}");
+    assert!(drawn.contains(&"Ajustar".to_string()), "Edit: {drawn:?}");
+
+    // And the default board keeps English, so the three are read from the
+    // tokens rather than from one shared constant.
+    testing::reset();
+    Plain.draw_button_hints(&Hint::Cancel, &Hint::Done, &Hint::Edit, &Hint::None);
+    let drawn: Vec<String> = testing::drawn_text()
+        .into_iter()
+        .map(|(_, _, text, _, _)| text)
+        .collect();
+    assert!(drawn.contains(&"Cancel".to_string()), "{drawn:?}");
+    assert!(drawn.contains(&"Done".to_string()), "{drawn:?}");
+    assert!(drawn.contains(&"Edit".to_string()), "{drawn:?}");
+}
+
+/// Each mode word reaches its own slot, not merely all three somewhere.
+///
+/// The failure this catches is a resolver that maps every `HintWord` to
+/// `mode_hints[0]`, or indexes the array by slot: all three words appear, so an
+/// assertion that only asks "is Done on screen" passes while the bar tells a
+/// person to press the wrong key.
+#[test]
+fn each_mode_word_lands_on_the_key_it_names() {
+    testing::install();
+    testing::reset();
+    // Back, Confirm, Previous, Next — so the leftmost drawn is Back's.
+    Translated.draw_button_hints(&Hint::Cancel, &Hint::Done, &Hint::None, &Hint::None);
+
+    let mut drawn: Vec<(i32, String)> = testing::drawn_text()
+        .into_iter()
+        .map(|(x, _, text, _, _)| (x, text))
+        .collect();
+    drawn.sort_by_key(|(x, _)| *x);
+
+    assert_eq!(
+        drawn.iter().map(|(_, t)| t.as_str()).collect::<Vec<_>>(),
+        vec!["Cancelar", "Pronto"],
+        "Cancel sits over Back and Done over Confirm, in that order"
+    );
+}
+
 /// A row labels its keys by what each one does, not by where it sits.
 ///
 /// The bug this replaces: a row of three was taken to *mean* a badge with no
@@ -481,7 +557,7 @@ fn a_slider_knob_stays_on_its_track_at_both_ends() {
 
     let knob = |value: i32| {
         testing::reset();
-        backend.draw_slider(bounds, value, 100);
+        backend.draw_slider(bounds, value, 100, ControlState::Idle);
         // The knob is the last stroked rect: track, fill, knob-clear, knob.
         testing::ops_log()
             .into_iter()
@@ -508,12 +584,41 @@ fn a_slider_knob_stays_on_its_track_at_both_ends() {
     assert!(low.x() < high.x(), "and moves right as the value rises");
 }
 
+/// The three states are three pictures, painted.
+///
+/// The recorded state reaching the painter is not the same as the painter doing
+/// anything with it — a chrome that ignored it would still record three
+/// different calls while showing one frame. This asserts the ink.
+///
+/// It is the whole point of the mode: on a device with no Left/Right pair,
+/// opening a value changes what four keys do, and a repaint that looks
+/// identical spends a second of an e-ink panel saying nothing.
+#[test]
+fn a_slider_paints_its_three_states_differently() {
+    let paint = |state| {
+        let backend = start();
+        backend.draw_slider(Rect::new(0, 0, 300, 44), 50, 100, state);
+        testing::render(&testing::ops_log())
+    };
+
+    let idle = paint(ControlState::Idle);
+    let focused = paint(ControlState::Focused);
+    let editing = paint(ControlState::Editing);
+
+    assert_ne!(idle, focused, "a focused control has to show that it is");
+    assert_ne!(
+        focused, editing,
+        "and an open one has to be told apart from a merely focused one"
+    );
+    assert_ne!(idle, editing, "which makes all three distinct");
+}
+
 /// The knob is cleared before it is outlined, or the dithered track shows
 /// through it and the two read as one grey smear.
 #[test]
 fn a_slider_knob_is_opaque_over_its_track() {
     let backend = start();
-    backend.draw_slider(Rect::new(0, 0, 300, 44), 50, 100);
+    backend.draw_slider(Rect::new(0, 0, 300, 44), 50, 100, ControlState::Idle);
 
     let kinds: Vec<RectKind> = testing::ops_log()
         .into_iter()
@@ -643,7 +748,7 @@ fn a_painted_knob_reads_back_as_the_value_it_was_painted_for() {
     // The last stroked rect is the knob: track, fill, knob-clear, knob.
     let knob_for = |value: i32| {
         testing::reset();
-        backend.draw_slider(track, value, 100);
+        backend.draw_slider(track, value, 100, ControlState::Idle);
         testing::ops_log()
             .into_iter()
             .filter_map(|op| match op {

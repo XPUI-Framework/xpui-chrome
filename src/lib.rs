@@ -48,6 +48,7 @@ extern crate alloc;
 
 mod icons;
 mod paint;
+mod presets;
 mod row;
 mod tokens;
 
@@ -144,8 +145,14 @@ macro_rules! __plain_chrome {
                 $crate::draw_progress_bar({ let $binding = self; $tokens }, rect, current, total)
             }
 
-            fn draw_slider(&self, rect: $crate::__private::Rect, value: i32, max: i32) {
-                $crate::draw_slider({ let $binding = self; $tokens }, rect, value, max)
+            fn draw_slider(
+                &self,
+                rect: $crate::__private::Rect,
+                value: i32,
+                max: i32,
+                state: $crate::__private::ControlState,
+            ) {
+                $crate::draw_slider({ let $binding = self; $tokens }, rect, value, max, state)
             }
 
             fn draw_scroll_indicator(
@@ -200,7 +207,7 @@ macro_rules! __plain_chrome {
 #[doc(hidden)]
 pub mod __private {
     pub use xpui::Rect;
-    pub use xpui::host::{Chrome, Hint, RowField, ThemeMetric};
+    pub use xpui::host::{Chrome, ControlState, Hint, RowField, ThemeMetric};
 }
 
 /// The crate's prose, compiled.

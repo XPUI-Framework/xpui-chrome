@@ -15,7 +15,7 @@ This is that toolkit, once, for all of them:
 |---|---|
 | `draw_list` | rows, subtitles, values, and the selected-row marker |
 | `draw_option_popup` + `option_popup_row_rect` | a centred dialog and where its rows are |
-| `draw_slider` | dithered track, fill, opaque knob |
+| `draw_slider` | dithered track, fill, and a knob carrying the control's state: paper when idle, dithered once the keys are on it, with the whole control outlined as well when it is open |
 | `draw_progress_bar` | outline and proportional fill |
 | `draw_header` | title band and rule |
 | `draw_sub_header` | group heading with a trailing rule |
