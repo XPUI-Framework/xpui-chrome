@@ -31,10 +31,15 @@
 //! this crate, so the orphan rule rejects it (`E0210`). The macro writes the
 //! same impl into the backend's own crate, where it is allowed.
 //!
-//! Every method is also available as a plain function, so a backend that has
-//! *some* components of its own can take only the ones it lacks — which is
-//! exactly what the FreeInkUI backend does for the two pieces FreeInkUI has no
-//! component for.
+//! Nine of the trait's eleven methods are also plain functions, so a backend
+//! that has *some* components of its own can take only the ones it lacks
+//! rather than the whole impl. The other two are not on offer: `metric` is
+//! answered by [`Tokens::metric`], and `request_update` is the one thing a
+//! backend passes in — see [`plain_chrome!`] for why.
+//!
+//! Nothing takes that route today. `xpui-embedded-graphics` takes all nine
+//! through the macro, and the FreeInkUI backend answers `Chrome` over its own
+//! C ABI without depending on this crate at all.
 //!
 //! # How it reaches the canvas
 //!

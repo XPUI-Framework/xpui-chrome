@@ -49,9 +49,14 @@ one so a backend carrying its own can answer `|backend| &backend.tokens`: two
 backends in one process may be driving two different panels, and a global would
 give them one theme between them.
 
-Every method is also a plain function, so a backend with *some* components of
-its own can take only the ones it lacks — which is what the FreeInkUI backend
-does for the two pieces FreeInkUI has no component for.
+Nine of the trait's eleven methods are also plain functions, so a backend with
+*some* components of its own can take only the ones it lacks rather than the
+whole impl. The other two are not on offer: `metric` is answered by
+`Tokens::metric`, and `request_update` is the one a backend passes in.
+
+No backend here takes that route yet. `xpui-embedded-graphics` takes all nine
+through the macro, and the FreeInkUI backend answers `Chrome` over its own C
+ABI without depending on this crate.
 
 ## Two things worth knowing
 
