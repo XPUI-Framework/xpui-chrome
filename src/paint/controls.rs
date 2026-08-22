@@ -5,12 +5,20 @@ use xpui::host::{ControlState, Hint, HintWord};
 use xpui::{Font, Rect, Renderer};
 
 use super::text::{centred_y, draw_truncated};
-use crate::row::RowKey;
-use crate::tokens::Tokens;
+use xpui::host::{KeyRow, RowKey};
 
-/// The hints along the bottom, one per key the board says it has.
+use crate::labels::Labels;
+use crate::metrics::Metrics;
+
+/// The hints along the bottom, one per key the device says it has.
+///
+/// Three things, because three parties own them: the band's size is the
+/// caller's [`Metrics`], the words are its [`Labels`], and which word sits
+/// over which key is the device's [`KeyRow`].
 pub fn draw_button_hints(
-    tokens: &Tokens,
+    metrics: &Metrics,
+    labels: &Labels,
+    keys: &KeyRow,
     back: &Hint,
     confirm: &Hint,
     previous: &Hint,
@@ -20,16 +28,16 @@ pub fn draw_button_hints(
     // there is nothing to draw in it. Labelling keys that are not there is
     // worse than labelling none: it tells you to press something the device
     // does not have.
-    if tokens.button_hints_height <= 0 {
+    if metrics.button_hints_height <= 0 {
         return;
     }
 
     let size = Renderer::screen_size();
     let band = Rect::new(
         0,
-        size.height - tokens.button_hints_height,
+        size.height - metrics.button_hints_height,
         size.width,
-        tokens.button_hints_height,
+        metrics.button_hints_height,
     );
     let font = Font::ui_small();
 
@@ -43,18 +51,18 @@ pub fn draw_button_hints(
     // its row. A board with five keys and four things to say leaves the last
     // slot blank; dividing by four instead would slide every label off the key
     // it names.
-    let slot_width = band.width() / tokens.row.len().max(1) as i32;
+    let slot_width = band.width() / keys.len().max(1) as i32;
     let y = centred_y(band, font);
 
-    for (index, key) in tokens.row.iter().enumerate() {
+    for (index, key) in keys.iter().enumerate() {
         // What the screen said about *this* key, not about this position. A row
         // that omits Back must not shift Back's hint onto Confirm's key, which
         // is the bug this indirection exists to prevent.
         let (hint, standard) = match key {
-            RowKey::Back => (back, tokens.standard_hints[0]),
-            RowKey::Confirm => (confirm, tokens.standard_hints[1]),
-            RowKey::Previous => (previous, tokens.standard_hints[2]),
-            RowKey::Next => (next, tokens.standard_hints[3]),
+            RowKey::Back => (back, labels.standard_hints[0]),
+            RowKey::Confirm => (confirm, labels.standard_hints[1]),
+            RowKey::Previous => (previous, labels.standard_hints[2]),
+            RowKey::Next => (next, labels.standard_hints[3]),
             RowKey::Unassigned => continue,
         };
 
@@ -64,9 +72,9 @@ pub fn draw_button_hints(
         let label = match hint.label() {
             None => match hint.word() {
                 HintWord::Standard => standard,
-                HintWord::Edit => tokens.mode_hints[0],
-                HintWord::Done => tokens.mode_hints[1],
-                HintWord::Cancel => tokens.mode_hints[2],
+                HintWord::Edit => labels.mode_hints[0],
+                HintWord::Done => labels.mode_hints[1],
+                HintWord::Cancel => labels.mode_hints[2],
             },
             Some("") => continue,
             Some(text) => text,
@@ -83,13 +91,13 @@ pub fn draw_button_hints(
             y,
             label,
             font,
-            area.width() - tokens.spacing_small,
+            area.width() - metrics.spacing_small,
         );
     }
 }
 
 /// A determinate bar: an outline, filled up to `current`.
-pub fn draw_progress_bar(_tokens: &Tokens, rect: Rect, current: u32, total: u32) {
+pub fn draw_progress_bar(_metrics: &Metrics, rect: Rect, current: u32, total: u32) {
     Renderer::stroke_rect(rect);
     if total == 0 || rect.width() <= 2 {
         return;
@@ -108,16 +116,16 @@ pub fn draw_progress_bar(_tokens: &Tokens, rect: Rect, current: u32, total: u32)
 /// Where the knob sits for `value`, and the track it slides along.
 ///
 /// Shared by the painter and by `xpui`'s own touch-to-value conversion, which
-/// reads [`Tokens::slider_side_inset`] and `slider_knob_width` through
+/// reads [`Metrics::slider_side_inset`] and `slider_knob_width` through
 /// `ThemeMetric`. The two agree because they use the same two numbers.
-fn slider_knob(tokens: &Tokens, rect: Rect, value: i32, max: i32) -> Rect {
-    let inset = tokens.slider_side_inset;
+fn slider_knob(metrics: &Metrics, rect: Rect, value: i32, max: i32) -> Rect {
+    let inset = metrics.slider_side_inset;
     // `.max(1)`, matching `xpui::value_at`, not `.max(0)`. The two divide by
     // the same number to convert between a position and a value; if one
     // saturates at 0 and the other at 1 they disagree on a track too narrow
     // for its own knob, and the knob sits outside the widget while the value
     // snaps between the extremes.
-    let travel = (rect.width() - inset * 2 - tokens.slider_knob_width).max(1);
+    let travel = (rect.width() - inset * 2 - metrics.slider_knob_width).max(1);
     let along = if max > 0 {
         (travel as i64 * value.clamp(0, max) as i64 / max as i64) as i32
     } else {
@@ -125,12 +133,12 @@ fn slider_knob(tokens: &Tokens, rect: Rect, value: i32, max: i32) -> Rect {
     };
     // Kept inside the widget even when the widget is narrower than the knob,
     // so it cannot overlap whatever sits beside it.
-    let width = tokens.slider_knob_width.min(rect.width());
+    let width = metrics.slider_knob_width.min(rect.width());
     Rect::new(
         (rect.x() + inset + along).min(rect.x() + rect.width() - width),
-        rect.y() + (rect.height() - tokens.slider_knob_height).max(0) / 2,
+        rect.y() + (rect.height() - metrics.slider_knob_height).max(0) / 2,
         width,
-        tokens.slider_knob_height.min(rect.height()),
+        metrics.slider_knob_height.min(rect.height()),
     )
 }
 
@@ -150,25 +158,25 @@ fn slider_knob(tokens: &Tokens, rect: Rect, value: i32, max: i32) -> Rect {
 /// `fill_rect_dither`'s flag is a parity, not a density, so both of its values
 /// are the same 50% checkerboard on opposite squares. That is what left the
 /// knob as the only place with a change of shade still in it.
-pub fn draw_slider(tokens: &Tokens, rect: Rect, value: i32, max: i32, state: ControlState) {
+pub fn draw_slider(metrics: &Metrics, rect: Rect, value: i32, max: i32, state: ControlState) {
     if max <= 0 || rect.width() <= 0 || rect.height() <= 0 {
         // No range means no position to show. `Slider` guards this too, but
         // these functions are public and a backend may call them directly.
         return;
     }
-    let inset = tokens.slider_side_inset;
+    let inset = metrics.slider_side_inset;
     let track = Rect::new(
         rect.x() + inset,
-        rect.y() + (rect.height() - tokens.slider_track_height).max(0) / 2,
+        rect.y() + (rect.height() - metrics.slider_track_height).max(0) / 2,
         (rect.width() - inset * 2).max(0),
-        tokens.slider_track_height.min(rect.height()),
+        metrics.slider_track_height.min(rect.height()),
     );
 
     // Dithered rather than solid: on one bit, a solid track is
     // indistinguishable from the filled part of it.
     Renderer::fill_rect_dither(track, true);
 
-    let knob = slider_knob(tokens, rect, value, max);
+    let knob = slider_knob(metrics, rect, value, max);
     let filled = (knob.x() + knob.width() / 2 - track.x()).clamp(0, track.width());
     if filled > 0 {
         Renderer::fill_rect(
@@ -198,13 +206,19 @@ pub fn draw_slider(tokens: &Tokens, rect: Rect, value: i32, max: i32, state: Con
 ///
 /// Draws nothing when everything already fits — a full-height bar tells the
 /// reader there is more to see when there is not.
-pub fn draw_scroll_indicator(tokens: &Tokens, rect: Rect, content: i32, visible: i32, offset: i32) {
+pub fn draw_scroll_indicator(
+    metrics: &Metrics,
+    rect: Rect,
+    content: i32,
+    visible: i32,
+    offset: i32,
+) {
     if content <= visible || visible <= 0 || content <= 0 {
         return;
     }
 
-    let x = rect.x() + rect.width() - tokens.scrollbar_width - tokens.scrollbar_inset;
-    let track = Rect::new(x, rect.y(), tokens.scrollbar_width, rect.height());
+    let x = rect.x() + rect.width() - metrics.scrollbar_width - metrics.scrollbar_inset;
+    let track = Rect::new(x, rect.y(), metrics.scrollbar_width, rect.height());
     Renderer::fill_rect_dither(track, true);
 
     // A minimum so a very long page still shows something grabbable, and a
@@ -212,7 +226,7 @@ pub fn draw_scroll_indicator(tokens: &Tokens, rect: Rect, content: i32, visible:
     // indicator is drawn *after* the scroll view lifts its clip, so a spill
     // lands on whatever sits below the viewport rather than being trimmed away.
     let thumb_height = ((track.height() as i64 * visible as i64 / content as i64)
-        .max(tokens.min_touch_size as i64 / 4) as i32)
+        .max(metrics.min_touch_size as i64 / 4) as i32)
         .min(track.height());
     let travel = (track.height() - thumb_height).max(0);
     let scrollable = (content - visible).max(1);

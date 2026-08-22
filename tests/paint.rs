@@ -4,11 +4,14 @@
 //! each assertion is about pixels-as-drawn rather than about intent.
 
 use xpui::host::{Chrome, ControlState, Hint, RowField};
+use xpui::host::{KeyRow, RowKey};
 use xpui::testing::{self, DrawOp, RectKind};
 use xpui::{Font, Rect, Renderer};
-use xpui_chrome::{RowKey, Tokens};
+use xpui_chrome::{Labels, Metrics};
 
-const TOKENS: Tokens = Tokens::DEFAULT;
+const METRICS: Metrics = Metrics::DEFAULT;
+const LABELS: Labels = Labels::ENGLISH;
+const KEYS: KeyRow = KeyRow::READER;
 
 /// Three keys along the bottom, and one of them is Back.
 ///
@@ -22,16 +25,15 @@ const TOKENS: Tokens = Tokens::DEFAULT;
 /// a positional painter puts Back over slot 0 and gets it backwards. The
 /// Pimoroni boards use `[Back, Confirm, Unassigned]`, which is why the fixture
 /// cannot.
-const BADGE_TOKENS: Tokens =
-    Tokens::DEFAULT.with_row(&[RowKey::Confirm, RowKey::Back, RowKey::Unassigned]);
+const BADGE_KEYS: KeyRow = KeyRow::new(&[RowKey::Confirm, RowKey::Back, RowKey::Unassigned]);
 
-/// A board that supplies its own words for the mode.
+/// An application that supplies its own words for the mode.
 ///
 /// Not English, so a framework that hard-coded "Edit" anywhere would be visible
 /// here rather than hiding behind a default that happens to match.
-const TRANSLATED_TOKENS: Tokens = Tokens {
+const TRANSLATED_LABELS: Labels = Labels {
     mode_hints: ["Ajustar", "Pronto", "Cancelar"],
-    ..Tokens::DEFAULT
+    ..Labels::ENGLISH
 };
 
 /// A backend that is nothing but the fake host, wearing this crate's `Chrome`.
@@ -42,7 +44,9 @@ struct Plain;
 
 xpui_chrome::plain_chrome! {
     for Plain,
-    tokens: |_backend| &TOKENS,
+    metrics: |_backend| &METRICS,
+    labels: |_backend| &LABELS,
+    keys: |_backend| &KEYS,
     request_update: |_backend| {},
 }
 
@@ -51,7 +55,9 @@ struct Badge;
 
 xpui_chrome::plain_chrome! {
     for Badge,
-    tokens: |_backend| &BADGE_TOKENS,
+    metrics: |_backend| &METRICS,
+    labels: |_backend| &LABELS,
+    keys: |_backend| &BADGE_KEYS,
     request_update: |_backend| {},
 }
 
@@ -59,7 +65,9 @@ struct Translated;
 
 xpui_chrome::plain_chrome! {
     for Translated,
-    tokens: |_backend| &TRANSLATED_TOKENS,
+    metrics: |_backend| &METRICS,
+    labels: |_backend| &TRANSLATED_LABELS,
+    keys: |_backend| &KEYS,
     request_update: |_backend| {},
 }
 
@@ -221,7 +229,7 @@ fn the_selected_row_is_marked_without_hiding_its_label() {
     assert_eq!(filled.len(), 1, "exactly one row is marked: {filled:?}");
     assert_eq!(
         filled[0].width(),
-        TOKENS.selection_marker_width,
+        METRICS.selection_marker_width,
         "the mark is a bar at the edge, not a fill over the whole row"
     );
 
@@ -247,7 +255,7 @@ fn a_list_stops_before_a_row_that_would_be_clipped() {
     ]);
 
     // Room for two rows and most of a third.
-    let stride = TOKENS.list_row_height + TOKENS.list_row_gap;
+    let stride = METRICS.list_row_height + METRICS.list_row_gap;
     backend.draw_list(Rect::new(0, 0, 400, stride * 2 + 10), 3, -1, &cells);
 
     let drawn: Vec<String> = testing::drawn_text()
@@ -277,7 +285,7 @@ fn a_subtitle_row_uses_the_taller_row_height() {
     let gap = tall[1] - tall[0];
     assert_eq!(
         gap,
-        TOKENS.list_row_height_with_subtitle + TOKENS.list_row_gap,
+        METRICS.list_row_height_with_subtitle + METRICS.list_row_gap,
         "rows with subtitles are spaced by the taller stride"
     );
 }
@@ -391,7 +399,7 @@ fn the_mode_words_come_from_the_board() {
     assert!(drawn.contains(&"Ajustar".to_string()), "Edit: {drawn:?}");
 
     // And the default board keeps English, so the three are read from the
-    // tokens rather than from one shared constant.
+    // metrics rather than from one shared constant.
     testing::reset();
     Plain.draw_button_hints(&Hint::Cancel, &Hint::Done, &Hint::Edit, &Hint::None);
     let drawn: Vec<String> = testing::drawn_text()
@@ -719,12 +727,12 @@ fn the_content_band_clears_the_chrome_at_both_ends() {
     let bottom = backend.metric(xpui::host::ThemeMetric::ContentBottom);
 
     assert!(
-        top >= TOKENS.top_padding + TOKENS.header_height,
+        top >= METRICS.top_padding + METRICS.header_height,
         "content starts below the header band"
     );
     assert_eq!(
         bottom,
-        screen.height - TOKENS.button_hints_height,
+        screen.height - METRICS.button_hints_height,
         "and ends above the hints"
     );
     assert!(bottom > top);
@@ -783,7 +791,7 @@ fn both_ends_of_a_slider_are_reachable_by_touch() {
     let track = Rect::new(0, 0, 300, 44);
     let _ = backend;
 
-    let left = track.x() + TOKENS.slider_side_inset + TOKENS.selection_marker_width;
+    let left = track.x() + METRICS.slider_side_inset + METRICS.selection_marker_width;
     let right = track.x() + track.width();
 
     assert_eq!(
@@ -903,40 +911,40 @@ fn every_metric_returns_its_own_field() {
     use xpui::host::ThemeMetric::*;
     let backend = start();
 
-    assert_eq!(backend.metric(TopPadding), TOKENS.top_padding);
-    assert_eq!(backend.metric(HeaderHeight), TOKENS.header_height);
-    assert_eq!(backend.metric(VerticalSpacing), TOKENS.vertical_spacing);
+    assert_eq!(backend.metric(TopPadding), METRICS.top_padding);
+    assert_eq!(backend.metric(HeaderHeight), METRICS.header_height);
+    assert_eq!(backend.metric(VerticalSpacing), METRICS.vertical_spacing);
     assert_eq!(
         backend.metric(ButtonHintsHeight),
-        TOKENS.button_hints_height
+        METRICS.button_hints_height
     );
     assert_eq!(
         backend.metric(ContentSidePadding),
-        TOKENS.content_side_padding
+        METRICS.content_side_padding
     );
-    assert_eq!(backend.metric(ContentTop), TOKENS.content_top());
-    assert_eq!(backend.metric(ContentBottom), TOKENS.content_bottom());
-    assert_eq!(backend.metric(ListRowHeight), TOKENS.list_row_height);
+    assert_eq!(backend.metric(ContentTop), METRICS.content_top());
+    assert_eq!(backend.metric(ContentBottom), METRICS.content_bottom());
+    assert_eq!(backend.metric(ListRowHeight), METRICS.list_row_height);
     assert_eq!(
         backend.metric(ListRowHeightWithSubtitle),
-        TOKENS.list_row_height_with_subtitle
+        METRICS.list_row_height_with_subtitle
     );
-    assert_eq!(backend.metric(ListRowGap), TOKENS.list_row_gap);
+    assert_eq!(backend.metric(ListRowGap), METRICS.list_row_gap);
     assert_eq!(
         backend.metric(ProgressBarHeight),
-        TOKENS.progress_bar_height
+        METRICS.progress_bar_height
     );
-    assert_eq!(backend.metric(MinTouchSize), TOKENS.min_touch_size);
-    assert_eq!(backend.metric(SliderKnobWidth), TOKENS.slider_knob_width);
-    assert_eq!(backend.metric(SliderKnobHeight), TOKENS.slider_knob_height);
-    assert_eq!(backend.metric(SliderSideInset), TOKENS.slider_side_inset);
-    assert_eq!(backend.metric(SpacingSmall), TOKENS.spacing_small);
+    assert_eq!(backend.metric(MinTouchSize), METRICS.min_touch_size);
+    assert_eq!(backend.metric(SliderKnobWidth), METRICS.slider_knob_width);
+    assert_eq!(backend.metric(SliderKnobHeight), METRICS.slider_knob_height);
+    assert_eq!(backend.metric(SliderSideInset), METRICS.slider_side_inset);
+    assert_eq!(backend.metric(SpacingSmall), METRICS.spacing_small);
 
     // The one that is not a plain field: a taller font wins over the token,
     // so a swapped face cannot overprint the heading's own rule.
     assert_eq!(
         backend.metric(SubHeaderHeight),
-        TOKENS
+        METRICS
             .sub_header_height
             .max(xpui::Font::ui_small().line_height())
     );
@@ -994,14 +1002,14 @@ fn truncated_text_fits_the_width_it_was_given() {
 
 // -- panels smaller than a phone -------------------------------------------
 
-/// The default tokens are sized for a 480x800 e-reader. On a Badger 2040's
+/// The default metrics are sized for a 480x800 e-reader. On a Badger 2040's
 /// 296x128 strip they leave a 28-pixel content band, and a list refuses to
 /// paint a row that does not fit — so the screen comes back **empty**. This
 /// is the arithmetic that catches it, and the reason `SMALL` exists.
 #[test]
 fn the_default_tokens_do_not_fit_a_small_panel() {
     assert_eq!(
-        Tokens::DEFAULT.list_rows_for(128),
+        Metrics::DEFAULT.list_rows_for(128),
         0,
         "if this ever becomes non-zero the defaults changed, and `for_panel` \
          should be revisited rather than this test relaxed"
@@ -1013,19 +1021,19 @@ fn the_default_tokens_do_not_fit_a_small_panel() {
 #[test]
 fn every_preset_fits_the_panel_it_is_named_for() {
     assert!(
-        Tokens::SMALL.list_rows_for(128) >= 3,
+        Metrics::SMALL.list_rows_for(128) >= 3,
         "Badger 2040: {} rows",
-        Tokens::SMALL.list_rows_for(128)
+        Metrics::SMALL.list_rows_for(128)
     );
     assert!(
-        Tokens::COMPACT.list_rows_for(240) >= 4,
+        Metrics::COMPACT.list_rows_for(240) >= 4,
         "Tufty 2040: {} rows",
-        Tokens::COMPACT.list_rows_for(240)
+        Metrics::COMPACT.list_rows_for(240)
     );
     assert!(
-        Tokens::DEFAULT.list_rows_for(800) >= 12,
+        Metrics::DEFAULT.list_rows_for(800) >= 12,
         "a 480x800 e-reader: {} rows",
-        Tokens::DEFAULT.list_rows_for(800)
+        Metrics::DEFAULT.list_rows_for(800)
     );
 }
 
@@ -1040,8 +1048,8 @@ fn for_panel_always_picks_something_that_fits() {
         ("a 480x800 e-reader", 480, 800),
         ("a 800x480 e-reader on its side", 800, 480),
     ] {
-        let tokens = Tokens::for_panel(width, height);
-        let rows = tokens.list_rows_for(height);
+        let metrics = Metrics::for_panel(width, height);
+        let rows = metrics.list_rows_for(height);
         assert!(
             rows >= 3,
             "{name} ({width}x{height}) got a preset with room for {rows} rows"
@@ -1053,8 +1061,8 @@ fn for_panel_always_picks_something_that_fits() {
 /// 128 pixels tall.
 #[test]
 fn chrome_never_costs_more_than_half_a_small_panel() {
-    let tokens = Tokens::for_panel(296, 128);
-    let chrome = tokens.content_top() + tokens.button_hints_height;
+    let metrics = Metrics::for_panel(296, 128);
+    let chrome = metrics.content_top() + metrics.button_hints_height;
     assert!(
         chrome <= 64,
         "chrome takes {chrome} of 128 pixels, leaving {} for content",
@@ -1069,12 +1077,12 @@ fn chrome_never_costs_more_than_half_a_small_panel() {
 /// boards that never opted into anything.
 #[test]
 fn scaling_by_one_hundred_changes_nothing() {
-    for (name, tokens) in [
-        ("DEFAULT", Tokens::DEFAULT),
-        ("COMPACT", Tokens::COMPACT),
-        ("SMALL", Tokens::SMALL),
+    for (name, metrics) in [
+        ("DEFAULT", Metrics::DEFAULT),
+        ("COMPACT", Metrics::COMPACT),
+        ("SMALL", Metrics::SMALL),
     ] {
-        assert_eq!(tokens.scaled(100), tokens, "{name} moved at 100%");
+        assert_eq!(metrics.scaled(100), metrics, "{name} moved at 100%");
     }
 }
 
@@ -1082,7 +1090,7 @@ fn scaling_by_one_hundred_changes_nothing() {
 /// grow together. One of them left behind is a layout that no longer adds up.
 #[test]
 fn scaling_grows_every_band_together() {
-    let plain = Tokens::DEFAULT;
+    let plain = Metrics::DEFAULT;
     let scaled = plain.scaled(120);
 
     for (name, before, after) in [
@@ -1118,20 +1126,24 @@ fn scaling_grows_every_band_together() {
 /// once, and over 100% on any board that ever wants more.
 #[test]
 fn scaling_leaves_what_is_not_a_pixel_alone() {
-    let scaled = Tokens::DEFAULT.scaled(120);
+    let scaled = Metrics::DEFAULT.scaled(120);
 
     assert_eq!(
         scaled.dialog_width_percent,
-        Tokens::DEFAULT.dialog_width_percent
+        Metrics::DEFAULT.dialog_width_percent
     );
-    assert_eq!(scaled.standard_hints, Tokens::DEFAULT.standard_hints);
+
+    // The hint words used to be the other half of this assertion. They are not
+    // in `Metrics` any more, so `scaled` cannot reach them and the type system
+    // makes the claim instead of a test — which is why there is one assertion
+    // here and there used to be two.
 }
 
 /// A hairline is one pixel and cannot become none: a rule scaled to zero stops
 /// being drawn, and a row gap of zero is a list whose rows touch.
 #[test]
 fn a_single_pixel_survives_being_scaled_down() {
-    let tiny = Tokens::SMALL.scaled(10);
+    let tiny = Metrics::SMALL.scaled(10);
 
     assert!(
         tiny.scrollbar_inset >= 1 && tiny.dialog_border >= 1 && tiny.list_row_gap >= 1,
@@ -1144,37 +1156,37 @@ fn a_single_pixel_survives_being_scaled_down() {
 /// that fits its own track.
 #[test]
 fn every_preset_is_internally_consistent() {
-    for (name, tokens) in [
-        ("DEFAULT", Tokens::DEFAULT),
-        ("COMPACT", Tokens::COMPACT),
-        ("SMALL", Tokens::SMALL),
+    for (name, metrics) in [
+        ("DEFAULT", Metrics::DEFAULT),
+        ("COMPACT", Metrics::COMPACT),
+        ("SMALL", Metrics::SMALL),
         // And each of them as a touch board scales it. A preset that is
         // coherent at 100 and incoherent at 120 breaks on hardware, where
         // rounding decides whether the small step is still smaller than the
         // standard one.
-        ("DEFAULT scaled", Tokens::DEFAULT.scaled(120)),
-        ("COMPACT scaled", Tokens::COMPACT.scaled(120)),
-        ("SMALL scaled", Tokens::SMALL.scaled(120)),
+        ("DEFAULT scaled", Metrics::DEFAULT.scaled(120)),
+        ("COMPACT scaled", Metrics::COMPACT.scaled(120)),
+        ("SMALL scaled", Metrics::SMALL.scaled(120)),
     ] {
         assert!(
-            tokens.spacing_small < tokens.vertical_spacing,
+            metrics.spacing_small < metrics.vertical_spacing,
             "{name}: a heading spaced as widely within its group as between \
              groups reads as belonging to the wrong one"
         );
         assert!(
-            tokens.list_row_height_with_subtitle > tokens.list_row_height,
+            metrics.list_row_height_with_subtitle > metrics.list_row_height,
             "{name}: a two-line row needs more height than a one-line row"
         );
         assert!(
-            tokens.slider_knob_width < tokens.min_touch_size,
+            metrics.slider_knob_width < metrics.min_touch_size,
             "{name}: a knob wider than the minimum touch target has nowhere to travel"
         );
         assert!(
-            tokens.dialog_border * 2 < tokens.dialog_padding,
+            metrics.dialog_border * 2 < metrics.dialog_padding,
             "{name}: a border thicker than its own padding leaves no room for text"
         );
         assert!(
-            tokens.dialog_width_percent > 50 && tokens.dialog_width_percent <= 100,
+            metrics.dialog_width_percent > 50 && metrics.dialog_width_percent <= 100,
             "{name}: a dialog narrower than half the panel is unreadable"
         );
     }

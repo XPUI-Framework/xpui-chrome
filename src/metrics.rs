@@ -1,4 +1,4 @@
-//! The numbers everything here paints with.
+//! The measurements everything here paints to.
 //!
 //! A backend that wants a different look changes these rather than the drawing
 //! code. They are the same values `xpui`'s [`ThemeMetric`] asks for, in one
@@ -8,16 +8,14 @@
 use xpui::host::ThemeMetric;
 use xpui::{Font, Renderer};
 
-use crate::row::RowKey;
-
 /// Geometry for the components in this crate.
 ///
 /// Every field is a pixel count. The defaults suit a portrait e-ink panel of
 /// roughly 480x800 at 1 bit; they scale by being asked for rather than
-/// hardcoded at call sites, so a smaller panel needs a smaller `Tokens` and no
+/// hardcoded at call sites, so a smaller panel needs a smaller `Metrics` and no
 /// other change.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub struct Tokens {
+pub struct Metrics {
     /// Gap above the header band.
     pub top_padding: i32,
     pub header_height: i32,
@@ -67,55 +65,9 @@ pub struct Tokens {
     pub dialog_padding: i32,
     /// Fraction of the panel width a dialog occupies, as a percentage.
     pub dialog_width_percent: i32,
-
-    /// What the four button-hint slots say when a screen passes
-    /// [`Hint::Standard`](xpui::host::Hint), in meaning order: back, confirm,
-    /// previous, next.
-    ///
-    /// Here rather than hardcoded in the painter because "your own standard
-    /// label for this slot" is precisely the part a product supplies — this
-    /// crate has no idea what language its user reads. The defaults are
-    /// English because something has to be.
-    pub standard_hints: [&'static str; 4],
-    /// The words a value control's mode needs, which the four above have no
-    /// room for: opening one, keeping what it reads, and putting it back.
-    ///
-    /// Separate because the four are chosen by *which key* a slot sits over and
-    /// these are chosen by what the framework is doing — no key implies "Edit".
-    /// Board-supplied for the same reason as the four: this crate has no idea
-    /// what language its user reads.
-    pub mode_hints: [&'static str; 3],
-    /// What each key along the bottom edge means, left to right.
-    ///
-    /// Its length is how many keys the row has, so this answers both questions
-    /// a hint bar asks — how many slots to divide the band into, and which
-    /// word goes in each. They used to be one question, inferred from the
-    /// count: three keys was taken to mean a badge with no key for Back. That
-    /// held until a board arrived with three keys *and* a Back among them, and
-    /// every label after the first sat over the wrong key.
-    ///
-    /// Naming a key the device does not have is worse than naming none — it
-    /// sends a person looking for it — so a slot with nothing behind it is
-    /// [`RowKey::Unassigned`] and stays blank.
-    pub row: &'static [RowKey],
 }
 
-impl Tokens {
-    /// The same chrome, for a device whose bottom row is not a reader's four.
-    ///
-    /// ```text
-    /// // A badge: three keys, the last with nothing on it yet.
-    /// Tokens::SMALL.with_row(&[RowKey::Back, RowKey::Confirm, RowKey::Unassigned])
-    /// ```
-    ///
-    /// Giving that third key a job later is this one line, which is the point
-    /// of the row being data rather than a rule inside the painter.
-    pub const fn with_row(&self, row: &'static [RowKey]) -> Tokens {
-        let mut tokens = *self;
-        tokens.row = row;
-        tokens
-    }
-
+impl Metrics {
     /// The same chrome with no band reserved for button hints.
     ///
     /// For a device whose Back and Confirm come from its touchscreen rather
@@ -126,31 +78,30 @@ impl Tokens {
     ///
     /// The height is the reservation as well as the drawing, so the content
     /// gains the space rather than leaving a gap where the band would be.
-    pub const fn without_button_hints(&self) -> Tokens {
-        let mut tokens = *self;
-        tokens.button_hints_height = 0;
-        tokens
+    pub const fn without_button_hints(&self) -> Metrics {
+        let mut metrics = *self;
+        metrics.button_hints_height = 0;
+        metrics
     }
 
     /// The same chrome, sized for a board that asks for larger targets.
     ///
     /// `percent` is a board's UI scale: 100 leaves every number alone, 120
     /// turns a 40px row into 48. An integer percentage rather than a float
-    /// because `Tokens` is `Eq` and every preset is a `const` — neither of
+    /// because `Metrics` is `Eq` and every preset is a `const` — neither of
     /// which an `f32` allows — and because the device targets have no
     /// floating-point unit, so a multiply by 1.2 there is a soft-float call in
     /// code every layout pass runs.
     ///
-    /// Everything counted in pixels scales. Three fields do not:
+    /// Everything counted in pixels scales. One field does not:
     /// [`dialog_width_percent`] is already a ratio of the panel, and scaling a
     /// ratio pushes the dialog past the edge it is measured against; and
-    /// [`standard_hints`] and [`mode_hints`] are words.
+    /// words do not scale at all, which is why [`Labels`](crate::Labels) is a
+    /// separate thing to hand a painter.
     ///
-    /// [`dialog_width_percent`]: Tokens::dialog_width_percent
-    /// [`standard_hints`]: Tokens::standard_hints
-    /// [`mode_hints`]: Tokens::mode_hints
-    pub const fn scaled(&self, percent: u16) -> Tokens {
-        Tokens {
+    /// [`dialog_width_percent`]: Metrics::dialog_width_percent
+    pub const fn scaled(&self, percent: u16) -> Metrics {
+        Metrics {
             top_padding: scale(self.top_padding, percent),
             header_height: scale(self.header_height, percent),
             vertical_spacing: scale(self.vertical_spacing, percent),
@@ -179,10 +130,6 @@ impl Tokens {
             dialog_border: scale(self.dialog_border, percent),
             dialog_padding: scale(self.dialog_padding, percent),
             dialog_width_percent: self.dialog_width_percent,
-
-            standard_hints: self.standard_hints,
-            mode_hints: self.mode_hints,
-            row: self.row,
         }
     }
 
@@ -192,16 +139,16 @@ impl Tokens {
     /// hint bar cost the same number of pixels on any width. The thresholds
     /// are where a preset stops leaving room for three list rows.
     ///
-    /// A backend with an opinion supplies its own `Tokens` instead — this is a
+    /// A backend with an opinion supplies its own `Metrics` instead — this is a
     /// sensible default, not a rule.
-    pub const fn for_panel(width: i32, height: i32) -> Tokens {
+    pub const fn for_panel(width: i32, height: i32) -> Metrics {
         let _ = width;
         if height <= 160 {
-            Tokens::SMALL
+            Metrics::SMALL
         } else if height <= 320 {
-            Tokens::COMPACT
+            Metrics::COMPACT
         } else {
-            Tokens::DEFAULT
+            Metrics::DEFAULT
         }
     }
 
@@ -219,8 +166,8 @@ impl Tokens {
         (band + self.list_row_gap) / stride
     }
 
-    /// [`content_top`](Tokens::content_top) without needing an installed host,
-    /// so [`list_rows_for`](Tokens::list_rows_for) can be a `const fn`.
+    /// [`content_top`](Metrics::content_top) without needing an installed host,
+    /// so [`list_rows_for`](Metrics::list_rows_for) can be a `const fn`.
     const fn content_top_const(&self) -> i32 {
         self.top_padding + self.header_height + self.vertical_spacing
     }
@@ -232,7 +179,7 @@ impl Tokens {
 
     /// First y occupied by the button hints; content must stay above it.
     ///
-    /// Derived from the live panel height rather than stored, so one `Tokens`
+    /// Derived from the live panel height rather than stored, so one `Metrics`
     /// works on every panel a backend might be driving.
     pub fn content_bottom(&self) -> i32 {
         Renderer::screen_size().height - self.button_hints_height
@@ -266,9 +213,9 @@ impl Tokens {
     }
 }
 
-impl Default for Tokens {
+impl Default for Metrics {
     fn default() -> Self {
-        Tokens::DEFAULT
+        Metrics::DEFAULT
     }
 }
 

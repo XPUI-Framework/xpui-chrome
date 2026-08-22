@@ -1,16 +1,15 @@
 //! The three panel sizes this crate ships presets for.
 //!
-//! Separate from [`Tokens`] itself because they are different jobs: that file
+//! Separate from [`Metrics`] itself because they are different jobs: that file
 //! says what a token set *is* and how one is derived from another, and this one
 //! is the measured answer for three shapes of glass. A fourth panel is a fourth
 //! constant here and nothing else.
 
-use crate::row::READER_ROW;
-use crate::tokens::Tokens;
+use crate::metrics::Metrics;
 
-impl Tokens {
+impl Metrics {
     /// The defaults every function here uses when a backend supplies nothing.
-    pub const DEFAULT: Tokens = Tokens {
+    pub const DEFAULT: Metrics = Metrics {
         top_padding: 8,
         header_height: 40,
         vertical_spacing: 12,
@@ -39,10 +38,6 @@ impl Tokens {
         dialog_border: 2,
         dialog_padding: 12,
         dialog_width_percent: 80,
-
-        standard_hints: ["Back", "Select", "Up", "Down"],
-        mode_hints: ["Edit", "Done", "Cancel"],
-        row: READER_ROW,
     };
 
     /// For a panel of roughly 320x240 — a Tufty 2040, or any small colour LCD.
@@ -51,7 +46,7 @@ impl Tokens {
     /// 240-pixel one, which is 40% of it. Everything shrinks, and touch
     /// targets shrink furthest: a board with five buttons and no touchscreen
     /// does not need a 44-pixel finger target.
-    pub const COMPACT: Tokens = Tokens {
+    pub const COMPACT: Metrics = Metrics {
         top_padding: 2,
         header_height: 24,
         vertical_spacing: 4,
@@ -80,10 +75,6 @@ impl Tokens {
         dialog_border: 1,
         dialog_padding: 6,
         dialog_width_percent: 88,
-
-        standard_hints: ["Back", "OK", "Up", "Down"],
-        mode_hints: ["Edit", "Done", "Cancel"],
-        row: READER_ROW,
     };
 
     /// For a panel of roughly 296x128 — a Badger 2040, or any small e-ink strip.
@@ -93,7 +84,7 @@ impl Tokens {
     /// leave 28 pixels of content, and a list refuses to paint a row that does
     /// not fit, so the screen comes back empty. Three rows is the target — a
     /// list of two with somewhere to scroll to.
-    pub const SMALL: Tokens = Tokens {
+    pub const SMALL: Metrics = Metrics {
         top_padding: 0,
         header_height: 18,
         // Still larger than `spacing_small`, even squeezed this far: a heading
@@ -125,11 +116,5 @@ impl Tokens {
         dialog_border: 1,
         dialog_padding: 4,
         dialog_width_percent: 92,
-
-        // Two of the five buttons on these boards are Up and Down; the labels
-        // have to fit a quarter of a 296-pixel strip in a 6-pixel font.
-        standard_hints: ["Back", "OK", "Up", "Dn"],
-        mode_hints: ["Edit", "Done", "Undo"],
-        row: READER_ROW,
     };
 }

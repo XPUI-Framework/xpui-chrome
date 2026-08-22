@@ -27,13 +27,17 @@ This is that toolkit, once, for all of them:
 ```rust
 # struct MyBackend;
 # impl MyBackend { fn flush(&self) {} }
-use xpui_chrome::Tokens;
+use xpui_chrome::{KeyRow, Labels, Metrics};
 
-static TOKENS: Tokens = Tokens::DEFAULT;
+static METRICS: Metrics = Metrics::DEFAULT;
+static LABELS: Labels = Labels::ENGLISH;
+static KEYS: KeyRow = KeyRow::READER;
 
 xpui_chrome::plain_chrome! {
     for MyBackend,
-    tokens: |_backend| &TOKENS,
+    metrics: |_backend| &METRICS,
+    labels: |_backend| &LABELS,
+    keys: |_backend| &KEYS,
     request_update: |backend| backend.flush(),
 }
 ```
@@ -41,18 +45,22 @@ xpui_chrome::plain_chrome! {
 Your backend implements `Canvas`, `TextMetrics`, `InputSource` and `Clock`.
 That macro writes the whole of `Chrome`.
 
-`request_update` is the one thing you pass in, because only a backend knows how
-to get pixels onto a panel.
+Four things you pass in, because four parties own them. The **metrics** size
+the chrome and come from whoever knows the panel. The **labels** are words, and
+only an application knows what language its user reads. The **key row** says
+which word sits over which key, which is a fact about the hardware. And
+`request_update` is there because only a backend knows how to get pixels onto a
+panel.
 
-Both parameters are closures over the backend, not plain values. `tokens` is
-one so a backend carrying its own can answer `|backend| &backend.tokens`: two
-backends in one process may be driving two different panels, and a global would
-give them one theme between them.
+All four are closures over the backend, not plain values, so a backend
+carrying its own can answer `|backend| &backend.metrics`: two backends in one
+process may be driving two different panels, in two different languages, with
+two different key rows, and globals would give them one of each between them.
 
 Nine of the trait's eleven methods are also plain functions, so a backend with
 *some* components of its own can take only the ones it lacks rather than the
 whole impl. The other two are not on offer: `metric` is answered by
-`Tokens::metric`, and `request_update` is the one a backend passes in.
+`Metrics::metric`, and `request_update` is the one a backend passes in.
 
 No backend here takes that route yet. `xpui-embedded-graphics` takes all nine
 through the macro, and the FreeInkUI backend answers `Chrome` over its own C
@@ -78,9 +86,18 @@ and it is illegal: both the trait and the type parameter are foreign to this
 crate, so the orphan rule rejects it (`E0210`). The macro writes the same impl
 into your crate, where it is allowed.
 
-## Tokens
+## Metrics, labels and a key row
 
-`Tokens` holds every number these functions paint with — the same values
+`Metrics` holds every number these functions paint to — the same values
 `ThemeMetric` asks for, plus a few this crate needs and `xpui` does not name.
 Change those rather than the drawing code. `content_bottom` is derived from the
-live panel height rather than stored, so one `Tokens` works on any panel.
+live panel height rather than stored, so one `Metrics` works on any panel.
+
+`Labels` holds the words the hint bar shows. They are not measurements and they
+do not scale; English ships because something has to, and every one of them is
+meant to be replaced by whatever the application's user reads.
+
+`KeyRow` is `xpui`'s, not this crate's, and says what the keys along a device's
+bottom edge mean, left to right. It decides which of the four standard words
+lands over which key — and a slot with nothing behind it stays blank, because
+naming a key the device does not have sends a person looking for it.

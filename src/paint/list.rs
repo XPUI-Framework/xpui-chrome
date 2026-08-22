@@ -4,7 +4,7 @@ use xpui::host::RowField;
 use xpui::{Font, Rect, Renderer};
 
 use super::text::{centred_y, draw_truncated};
-use crate::tokens::Tokens;
+use crate::metrics::Metrics;
 
 /// Height of one row, chosen by whether any row carries a subtitle — the same
 /// rule `xpui`'s `List` measures with.
@@ -14,13 +14,13 @@ use crate::tokens::Tokens;
 /// be most of a row — 224 pixels on a 480x800 panel. A caller that needs to
 /// know where the list really ends has to ask rather than divide.
 pub fn rows_that_fit<'a>(
-    tokens: &Tokens,
+    metrics: &Metrics,
     rect: Rect,
     rows: usize,
     row: &dyn Fn(usize, RowField) -> Option<&'a str>,
 ) -> usize {
-    let height = row_height(tokens, rows, row);
-    let stride = height + tokens.list_row_gap;
+    let height = row_height(metrics, rows, row);
+    let stride = height + metrics.list_row_gap;
     (0..rows)
         .take_while(|index| {
             let top = rect.y() + stride * *index as i32;
@@ -31,28 +31,28 @@ pub fn rows_that_fit<'a>(
 
 /// The height every row in this list gets.
 pub fn row_height<'a>(
-    tokens: &Tokens,
+    metrics: &Metrics,
     rows: usize,
     row: &dyn Fn(usize, RowField) -> Option<&'a str>,
 ) -> i32 {
     let has_subtitle = (0..rows).any(|index| row(index, RowField::Subtitle).is_some());
     if has_subtitle {
-        tokens.list_row_height_with_subtitle
+        metrics.list_row_height_with_subtitle
     } else {
-        tokens.list_row_height
+        metrics.list_row_height
     }
 }
 
 /// The themed list. Only rows that fit entirely are drawn.
 pub fn draw_list<'a>(
-    tokens: &Tokens,
+    metrics: &Metrics,
     rect: Rect,
     rows: usize,
     selected: i32,
     row: &dyn Fn(usize, RowField) -> Option<&'a str>,
 ) {
-    let height = row_height(tokens, rows, row);
-    let stride = height + tokens.list_row_gap;
+    let height = row_height(metrics, rows, row);
+    let stride = height + metrics.list_row_gap;
 
     for index in 0..rows {
         let top = rect.y() + stride * index as i32;
@@ -62,18 +62,18 @@ pub fn draw_list<'a>(
             break;
         }
         let bounds = Rect::new(rect.x(), top, rect.width(), height);
-        draw_row(tokens, bounds, index as i32 == selected, index, row);
+        draw_row(metrics, bounds, index as i32 == selected, index, row);
     }
 }
 
 pub(super) fn draw_row<'a>(
-    tokens: &Tokens,
+    metrics: &Metrics,
     bounds: Rect,
     selected: bool,
     index: usize,
     row: &dyn Fn(usize, RowField) -> Option<&'a str>,
 ) {
-    let marker = tokens.selection_marker_width;
+    let marker = metrics.selection_marker_width;
 
     if selected {
         // A bar down the leading edge, plus an outline. Not an inverted fill:
@@ -85,8 +85,8 @@ pub(super) fn draw_row<'a>(
         Renderer::stroke_rect(bounds);
     }
 
-    let text_x = bounds.x() + marker + tokens.spacing_small * 2;
-    let mut room = bounds.width() - (text_x - bounds.x()) - tokens.spacing_small * 2;
+    let text_x = bounds.x() + marker + metrics.spacing_small * 2;
+    let mut room = bounds.width() - (text_x - bounds.x()) - metrics.spacing_small * 2;
 
     let title_font = Font::ui();
     let subtitle = row(index, RowField::Subtitle);
@@ -95,13 +95,13 @@ pub(super) fn draw_row<'a>(
         let value_font = Font::ui();
         let width = value_font.text_width(value).min(room.max(0));
         draw_truncated(
-            bounds.x() + bounds.width() - tokens.spacing_small * 2 - width,
+            bounds.x() + bounds.width() - metrics.spacing_small * 2 - width,
             centred_y(bounds, value_font),
             value,
             value_font,
             width,
         );
-        room -= width + tokens.spacing_small * 2;
+        room -= width + metrics.spacing_small * 2;
     }
 
     let Some(title) = row(index, RowField::Title) else {

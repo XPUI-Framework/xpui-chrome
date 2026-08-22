@@ -5,7 +5,7 @@ use xpui::{Font, Rect, Renderer};
 
 use super::list::draw_row;
 use super::text::draw_truncated;
-use crate::tokens::Tokens;
+use crate::metrics::Metrics;
 
 /// Where a dialog and its rows land.
 ///
@@ -28,11 +28,11 @@ pub struct PopupLayout {
     pub visible: usize,
 }
 
-pub fn popup_layout(tokens: &Tokens, title: &str, count: usize) -> PopupLayout {
+pub fn popup_layout(metrics: &Metrics, title: &str, count: usize) -> PopupLayout {
     let screen = Renderer::screen_size();
     let title_font = Font::ui().bold();
-    let border = tokens.dialog_border;
-    let padding = tokens.dialog_padding;
+    let border = metrics.dialog_border;
+    let padding = metrics.dialog_padding;
 
     let title_band = if title.is_empty() {
         0
@@ -40,7 +40,7 @@ pub fn popup_layout(tokens: &Tokens, title: &str, count: usize) -> PopupLayout {
         title_font.line_height() + padding
     };
 
-    let row_height = tokens.list_row_height.max(1);
+    let row_height = metrics.list_row_height.max(1);
     let chrome = border * 2 + padding * 2 + title_band;
     // Never taller than the panel, and never fewer than one row — a dialog
     // showing nothing is not an improvement on one showing too much.
@@ -49,7 +49,7 @@ pub fn popup_layout(tokens: &Tokens, title: &str, count: usize) -> PopupLayout {
 
     let body = row_height * visible as i32;
     let height = chrome + body;
-    let width = (screen.width * tokens.dialog_width_percent / 100).min(screen.width);
+    let width = (screen.width * metrics.dialog_width_percent / 100).min(screen.width);
 
     let frame = Rect::new(
         (screen.width - width) / 2,
@@ -74,7 +74,7 @@ pub fn popup_layout(tokens: &Tokens, title: &str, count: usize) -> PopupLayout {
 
 /// A centred dialog: a cleared frame, a border, a title, and its options.
 pub fn draw_option_popup<'a>(
-    tokens: &Tokens,
+    metrics: &Metrics,
     title: &str,
     options: &dyn Fn(usize) -> Option<&'a str>,
     count: usize,
@@ -85,12 +85,12 @@ pub fn draw_option_popup<'a>(
         // failed to load. `Modal` guards this, but these are public.
         return;
     }
-    let layout = popup_layout(tokens, title, count);
+    let layout = popup_layout(metrics, title, count);
 
     // Cleared first: a dialog sits over content, and its own background is the
     // only thing making it legible.
     Renderer::fill_rect(layout.frame, false);
-    for ring in 0..tokens.dialog_border {
+    for ring in 0..metrics.dialog_border {
         Renderer::stroke_rect(Rect::new(
             layout.frame.x() + ring,
             layout.frame.y() + ring,
@@ -101,7 +101,7 @@ pub fn draw_option_popup<'a>(
 
     if !title.is_empty() {
         let font = Font::ui().bold();
-        let inner = tokens.dialog_border + tokens.dialog_padding;
+        let inner = metrics.dialog_border + metrics.dialog_padding;
         draw_truncated(
             layout.frame.x() + inner,
             layout.frame.y() + inner,
@@ -125,7 +125,7 @@ pub fn draw_option_popup<'a>(
             layout.first_row.height(),
         );
         draw_row(
-            tokens,
+            metrics,
             bounds,
             index as i32 == selected,
             index,
@@ -139,7 +139,7 @@ pub fn draw_option_popup<'a>(
 
 /// Screen rect of one dialog row, for hit-testing.
 pub fn option_popup_row_rect<'a>(
-    tokens: &Tokens,
+    metrics: &Metrics,
     title: &str,
     _options: &dyn Fn(usize) -> Option<&'a str>,
     count: usize,
@@ -148,7 +148,7 @@ pub fn option_popup_row_rect<'a>(
     if index >= count {
         return None;
     }
-    let layout = popup_layout(tokens, title, count);
+    let layout = popup_layout(metrics, title, count);
     if index >= layout.visible {
         // Off the bottom of a clamped dialog: not painted, so not touchable.
         return None;

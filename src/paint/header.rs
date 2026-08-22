@@ -4,14 +4,14 @@
 use xpui::{Font, Rect, Renderer};
 
 use super::text::{centred_y, draw_truncated};
-use crate::tokens::Tokens;
+use crate::metrics::Metrics;
 
 /// The title band, with a rule under it.
-pub fn draw_header(tokens: &Tokens, title: Option<&str>, subtitle: Option<&str>) {
+pub fn draw_header(metrics: &Metrics, title: Option<&str>, subtitle: Option<&str>) {
     let width = Renderer::screen_size().width;
-    let band = Rect::new(0, tokens.top_padding, width, tokens.header_height);
+    let band = Rect::new(0, metrics.top_padding, width, metrics.header_height);
     let font = Font::ui().bold();
-    let inset = tokens.content_side_padding;
+    let inset = metrics.content_side_padding;
 
     let mut room = band.width() - inset * 2;
 
@@ -31,7 +31,7 @@ pub fn draw_header(tokens: &Tokens, title: Option<&str>, subtitle: Option<&str>)
             small,
             subtitle_width,
         );
-        room -= subtitle_width + tokens.vertical_spacing;
+        room -= subtitle_width + metrics.vertical_spacing;
     }
 
     if let Some(title) = title {
@@ -45,7 +45,7 @@ pub fn draw_header(tokens: &Tokens, title: Option<&str>, subtitle: Option<&str>)
 }
 
 /// A group heading: the label, and a rule across the rest of the line.
-pub fn draw_sub_header(tokens: &Tokens, rect: Rect, label: &str, right: Option<&str>) {
+pub fn draw_sub_header(metrics: &Metrics, rect: Rect, label: &str, right: Option<&str>) {
     let font = Font::ui_small().bold();
     let mut room = rect.width();
 
@@ -63,7 +63,7 @@ pub fn draw_sub_header(tokens: &Tokens, rect: Rect, label: &str, right: Option<&
             plain,
             width,
         );
-        room -= width + tokens.spacing_small;
+        room -= width + metrics.spacing_small;
     }
 
     draw_truncated(rect.x(), rect.y(), label, font, room);
@@ -71,7 +71,7 @@ pub fn draw_sub_header(tokens: &Tokens, rect: Rect, label: &str, right: Option<&
     // A hairline along the baseline of the heading, starting after the label,
     // which is what makes a heading read as a divider rather than a row.
     let label_width = font.text_width(label).min(room.max(0));
-    let start = rect.x() + label_width + tokens.spacing_small;
+    let start = rect.x() + label_width + metrics.spacing_small;
     // `- 1`: a rect's right edge is exclusive, so `x + width` is the first
     // pixel *outside* it.
     let end = rect.x() + room - 1;

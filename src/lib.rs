@@ -13,13 +13,17 @@
 //! ```rust
 //! # struct MyBackend;
 //! # impl MyBackend { fn flush(&self) {} }
-//! use xpui_chrome::Tokens;
+//! use xpui_chrome::{KeyRow, Labels, Metrics};
 //!
-//! static TOKENS: Tokens = Tokens::DEFAULT;
+//! static METRICS: Metrics = Metrics::DEFAULT;
+//! static LABELS: Labels = Labels::ENGLISH;
+//! static KEYS: KeyRow = KeyRow::READER;
 //!
 //! xpui_chrome::plain_chrome! {
 //!     for MyBackend,
-//!     tokens: |_backend| &TOKENS,
+//!     metrics: |_backend| &METRICS,
+//!     labels: |_backend| &LABELS,
+//!     keys: |_backend| &KEYS,
 //!     request_update: |backend| backend.flush(),
 //! }
 //! ```
@@ -34,7 +38,7 @@
 //! Nine of the trait's eleven methods are also plain functions, so a backend
 //! that has *some* components of its own can take only the ones it lacks
 //! rather than the whole impl. The other two are not on offer: `metric` is
-//! answered by [`Tokens::metric`], and `request_update` is the one thing a
+//! answered by [`Metrics::metric`], and `request_update` is one of the four things a
 //! backend passes in — see [`plain_chrome!`] for why.
 //!
 //! Nothing takes that route today. `xpui-embedded-graphics` takes all nine
@@ -52,37 +56,48 @@
 extern crate alloc;
 
 mod icons;
+mod labels;
+mod metrics;
 mod paint;
 mod presets;
-mod row;
-mod tokens;
 
 pub use icons::{Icon, draw_icon, icon_size};
+pub use labels::Labels;
+pub use metrics::Metrics;
 pub use paint::{
     PopupLayout, draw_button_hints, draw_header, draw_list, draw_option_popup, draw_progress_bar,
     draw_scroll_indicator, draw_slider, draw_sub_header, option_popup_row_rect, popup_layout,
     row_height, rows_that_fit,
 };
-pub use row::{READER_ROW, RowKey};
-pub use tokens::Tokens;
+/// Re-exported so a backend needs one import for the three things
+/// [`plain_chrome!`] asks it for, though this one is `xpui`'s: a key row is a
+/// fact about hardware, not about painting.
+pub use xpui::host::{KeyRow, RowKey};
 
 /// Writes a complete [`Chrome`](xpui::host::Chrome) implementation for a
 /// backend that supplies only primitives.
 ///
 /// `request_update` has no sensible default — only the backend knows how to
-/// get pixels onto a panel — so it is the one thing you pass in.
+/// get pixels onto a panel — so it is one of the four things you pass in.
 ///
-/// `tokens` is a closure over the backend too, so one that carries its own can
-/// answer `|backend| &backend.tokens` rather than reaching for a global.
+/// Each is a closure over the backend, so one carrying its own can answer
+/// `|backend| &backend.metrics` rather than reaching for a global. Three
+/// rather than one because three parties own them: the caller sizes the
+/// chrome, the application supplies the words, and the device says which key
+/// each word sits over.
 ///
 /// ```rust
-/// # use xpui_chrome::Tokens;
+/// # use xpui_chrome::{KeyRow, Labels, Metrics};
 /// # struct MyBackend;
 /// # impl MyBackend { fn mark_dirty(&self) {} }
-/// # static TOKENS: Tokens = Tokens::DEFAULT;
+/// # static METRICS: Metrics = Metrics::DEFAULT;
+/// # static LABELS: Labels = Labels::ENGLISH;
+/// # static KEYS: KeyRow = KeyRow::READER;
 /// xpui_chrome::plain_chrome! {
 ///     for MyBackend,
-///     tokens: |_backend| &TOKENS,
+///     metrics: |_backend| &METRICS,
+///     labels: |_backend| &LABELS,
+///     keys: |_backend| &KEYS,
 ///     request_update: |backend| backend.mark_dirty(),
 /// }
 /// ```
@@ -95,18 +110,28 @@ macro_rules! plain_chrome {
     (
         generic: [$($generics:tt)*],
         for $backend:ty,
-        tokens: |$binding:ident| $tokens:expr,
+        metrics: |$binding:ident| $metrics:expr,
+        labels: |$lb:ident| $labels:expr,
+        keys: |$kb:ident| $keys:expr,
         request_update: |$this:ident| $update:expr $(,)?
     ) => {
-        $crate::__plain_chrome!([$($generics)*], $backend, $binding, $tokens, $this, $update);
+        $crate::__plain_chrome!(
+            [$($generics)*], $backend,
+            $binding, $metrics, $lb, $labels, $kb, $keys, $this, $update
+        );
     };
 
     (
         for $backend:ty,
-        tokens: |$binding:ident| $tokens:expr,
+        metrics: |$binding:ident| $metrics:expr,
+        labels: |$lb:ident| $labels:expr,
+        keys: |$kb:ident| $keys:expr,
         request_update: |$this:ident| $update:expr $(,)?
     ) => {
-        $crate::__plain_chrome!([], $backend, $binding, $tokens, $this, $update);
+        $crate::__plain_chrome!(
+            [], $backend,
+            $binding, $metrics, $lb, $labels, $kb, $keys, $this, $update
+        );
     };
 }
 
@@ -116,15 +141,17 @@ macro_rules! plain_chrome {
 #[macro_export]
 macro_rules! __plain_chrome {
     (
-        [$($generics:tt)*], $backend:ty, $binding:ident, $tokens:expr, $this:ident, $update:expr
+        [$($generics:tt)*], $backend:ty,
+        $binding:ident, $metrics:expr, $lb:ident, $labels:expr, $kb:ident, $keys:expr,
+        $this:ident, $update:expr
     ) => {
         impl<$($generics)*> $crate::__private::Chrome for $backend {
             fn metric(&self, metric: $crate::__private::ThemeMetric) -> i32 {
-                { let $binding = self; $tokens }.metric(metric)
+                { let $binding = self; $metrics }.metric(metric)
             }
 
             fn draw_header(&self, title: Option<&str>, subtitle: Option<&str>) {
-                $crate::draw_header({ let $binding = self; $tokens }, title, subtitle)
+                $crate::draw_header({ let $binding = self; $metrics }, title, subtitle)
             }
 
             fn draw_sub_header(
@@ -133,7 +160,7 @@ macro_rules! __plain_chrome {
                 label: &str,
                 right: Option<&str>,
             ) {
-                $crate::draw_sub_header({ let $binding = self; $tokens }, rect, label, right)
+                $crate::draw_sub_header({ let $binding = self; $metrics }, rect, label, right)
             }
 
             fn draw_button_hints(
@@ -143,11 +170,16 @@ macro_rules! __plain_chrome {
                 previous: &$crate::__private::Hint,
                 next: &$crate::__private::Hint,
             ) {
-                $crate::draw_button_hints({ let $binding = self; $tokens }, back, confirm, previous, next)
+                $crate::draw_button_hints(
+                    { let $binding = self; $metrics },
+                    { let $lb = self; $labels },
+                    { let $kb = self; $keys },
+                    back, confirm, previous, next,
+                )
             }
 
             fn draw_progress_bar(&self, rect: $crate::__private::Rect, current: u32, total: u32) {
-                $crate::draw_progress_bar({ let $binding = self; $tokens }, rect, current, total)
+                $crate::draw_progress_bar({ let $binding = self; $metrics }, rect, current, total)
             }
 
             fn draw_slider(
@@ -157,7 +189,7 @@ macro_rules! __plain_chrome {
                 max: i32,
                 state: $crate::__private::ControlState,
             ) {
-                $crate::draw_slider({ let $binding = self; $tokens }, rect, value, max, state)
+                $crate::draw_slider({ let $binding = self; $metrics }, rect, value, max, state)
             }
 
             fn draw_scroll_indicator(
@@ -167,7 +199,7 @@ macro_rules! __plain_chrome {
                 visible: i32,
                 offset: i32,
             ) {
-                $crate::draw_scroll_indicator({ let $binding = self; $tokens }, rect, content, visible, offset)
+                $crate::draw_scroll_indicator({ let $binding = self; $metrics }, rect, content, visible, offset)
             }
 
             fn draw_list<'a>(
@@ -177,7 +209,7 @@ macro_rules! __plain_chrome {
                 selected: i32,
                 row: &dyn Fn(usize, $crate::__private::RowField) -> Option<&'a str>,
             ) {
-                $crate::draw_list({ let $binding = self; $tokens }, rect, rows, selected, row)
+                $crate::draw_list({ let $binding = self; $metrics }, rect, rows, selected, row)
             }
 
             fn draw_option_popup<'a>(
@@ -187,7 +219,7 @@ macro_rules! __plain_chrome {
                 count: usize,
                 selected: i32,
             ) {
-                $crate::draw_option_popup({ let $binding = self; $tokens }, title, options, count, selected)
+                $crate::draw_option_popup({ let $binding = self; $metrics }, title, options, count, selected)
             }
 
             fn option_popup_row_rect<'a>(
@@ -197,7 +229,7 @@ macro_rules! __plain_chrome {
                 count: usize,
                 index: usize,
             ) -> Option<$crate::__private::Rect> {
-                $crate::option_popup_row_rect({ let $binding = self; $tokens }, title, options, count, index)
+                $crate::option_popup_row_rect({ let $binding = self; $metrics }, title, options, count, index)
             }
 
             fn request_update(&self) {
