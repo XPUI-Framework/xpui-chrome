@@ -152,6 +152,26 @@ impl Metrics {
         }
     }
 
+    /// The whole derivation, in one call, for a caller that knows its device.
+    ///
+    /// [`for_panel`](Metrics::for_panel) picks the preset, `percent` is the
+    /// device's own UI scale, and `hint_band` is whether it has a row of keys
+    /// worth labelling — a device that takes Back and Confirm from a
+    /// touchscreen reserves nothing at the bottom, and a hint bar there names
+    /// keys that do not exist.
+    ///
+    /// Here rather than left to each caller because the three steps have to
+    /// agree: picking a preset for the panel and then words for something else
+    /// is how a hint bar overruns the slot it was measured into.
+    pub const fn for_device(width: i32, height: i32, percent: u16, hint_band: bool) -> Metrics {
+        let metrics = Metrics::for_panel(width, height).scaled(percent);
+        if hint_band {
+            metrics
+        } else {
+            metrics.without_button_hints()
+        }
+    }
+
     /// How many list rows fit in the content band of a panel this tall.
     ///
     /// The question every preset exists to answer, so it is worth being able
