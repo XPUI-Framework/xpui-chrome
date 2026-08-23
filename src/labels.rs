@@ -58,9 +58,9 @@ impl Labels {
     /// The words that go with [`Metrics::for_panel`](crate::Metrics::for_panel).
     ///
     /// The same dispatch, deliberately: a panel small enough to need
-    /// [`Metrics::SMALL`] is small enough to need the words that preset was
-    /// measured with, and picking one without the other is how a hint bar ends
-    /// up overrunning its slot. `Metrics` and `Labels` are separate types
+    /// [`Metrics::SMALL`](crate::Metrics::SMALL) is small enough to need the
+    /// words that preset was measured with, and picking one without the other
+    /// is how a hint bar ends up overrunning its slot. `Metrics` and `Labels` are separate types
     /// because they have separate owners, not because a caller choosing by
     /// panel size should have to choose twice.
     pub const fn for_panel(width: i32, height: i32) -> Labels {
