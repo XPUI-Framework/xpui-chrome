@@ -42,8 +42,9 @@ xpui_chrome::plain_chrome! {
 }
 ```
 
-Your backend implements `Canvas`, `TextMetrics`, `InputSource` and `Clock`.
-That macro writes the whole of `Chrome`.
+Your backend implements `Canvas`, `TextMetrics`, `InputSource` and `Clock` —
+the contract is [`crates/xpui/docs/host.md`](../../xpui/docs/host.md). That
+macro writes the whole of the fifth, `Chrome`.
 
 Four things you pass in, because four parties own them. The **metrics** size
 the chrome and come from whoever knows the panel. The **labels** are words, and
