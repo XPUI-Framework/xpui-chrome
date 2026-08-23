@@ -1,5 +1,8 @@
 # `xpui-chrome`
 
+> ⚠️ **Under heavy development.** Not production-ready. The API can break
+> without notice. Use at your own risk.
+
 The eight themed components [`xpui`](../../xpui/) asks a backend to paint,
 painted from drawing primitives alone.
 
