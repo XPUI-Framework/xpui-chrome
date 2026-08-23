@@ -6,8 +6,6 @@ use xpui::{Font, Rect, Renderer};
 use super::text::{centred_y, draw_truncated};
 use crate::metrics::Metrics;
 
-/// Height of one row, chosen by whether any row carries a subtitle — the same
-/// rule `xpui`'s `List` measures with.
 /// How many of `rows` will actually be painted into `rect`.
 ///
 /// `draw_list` stops before a row that does not fit, so the space it leaves can
@@ -30,6 +28,10 @@ pub fn rows_that_fit<'a>(
 }
 
 /// The height every row in this list gets.
+///
+/// Uniform across the list, and chosen by whether **any** row carries a
+/// subtitle — the same rule `xpui`'s `List` measures with, so the two agree
+/// about how tall a list is.
 pub fn row_height<'a>(
     metrics: &Metrics,
     rows: usize,

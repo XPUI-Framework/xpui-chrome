@@ -1,0 +1,4 @@
+rect        (473,60 3x400) dither light
+rect        (473,126 3x133) filled
+rect        (473,60 3x400) dither light
+rect        (473,257 3x7) filled

@@ -1,0 +1,5 @@
+line        (0,778) -> (479,778)
+text        (50,782) "Back" font=1004 regular
+text        (165,782) "Select" font=1004 regular
+text        (295,782) "Up" font=1004 regular
+text        (410,782) "Down" font=1004 regular

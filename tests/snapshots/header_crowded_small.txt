@@ -1,0 +1,3 @@
+text        (301,2) "Wi-Fi, Bluetooth and aeroplane mode" font=1004 regular
+text        (4,0) "Network, internet and connected device settings" font=1003 bold
+line        (0,18) -> (479,18)

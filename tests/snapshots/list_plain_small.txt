@@ -1,0 +1,5 @@
+text        (7,63) "Wi-Fi" font=1003 regular
+rect        (0,86 3x24) filled
+rect        (0,86 480x24) stroked
+text        (7,89) "Bluetooth" font=1003 regular
+text        (7,115) "About" font=1003 regular

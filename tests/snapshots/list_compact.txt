@@ -1,0 +1,7 @@
+text        (456,72) "Off" font=1003 regular
+text        (9,72) "Wi-Fi" font=1003 regular
+rect        (0,105 3x42) filled
+rect        (0,105 480x42) stroked
+text        (9,110) "Storage" font=1003 regular
+text        (9,127) "3.1 GB free" font=1004 regular
+text        (9,162) "About" font=1003 regular

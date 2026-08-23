@@ -1,0 +1,4 @@
+rect        (22,117 436x5) dither light
+rect        (22,117 260x5) filled
+rect        (277,111 10x18) filled background
+rect        (277,111 10x18) stroked

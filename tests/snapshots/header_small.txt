@@ -1,0 +1,3 @@
+text        (451,2) "Wi-Fi" font=1004 regular
+text        (4,0) "Settings" font=1003 bold
+line        (0,18) -> (479,18)

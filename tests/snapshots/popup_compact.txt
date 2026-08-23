@@ -1,0 +1,8 @@
+rect        (29,336 422x127) filled background
+rect        (29,336 422x127) stroked
+text        (36,343) "Sleep after" font=1003 bold
+text        (45,372) "Never" font=1003 regular
+text        (45,402) "After 5 minutes" font=1003 regular
+rect        (36,426 3x30) filled
+rect        (36,426 408x30) stroked
+text        (45,432) "After an hour" font=1003 regular

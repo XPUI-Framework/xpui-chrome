@@ -1,0 +1,7 @@
+rect        (16,100 448x4) stroked
+rect        (17,101 267x2) filled
+rect        (16,100 448x4) stroked
+rect        (16,100 448x4) stroked
+rect        (17,101 446x2) filled
+rect        (16,100 448x4) stroked
+rect        (16,200 2x4) stroked

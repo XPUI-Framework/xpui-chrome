@@ -237,3 +237,88 @@ pub fn draw_scroll_indicator(
         true,
     );
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::Metrics;
+
+    const M: Metrics = Metrics::DEFAULT;
+
+    /// The two ends, exactly, because a knob that stops short reads as a
+    /// slider that cannot reach its own maximum.
+    #[test]
+    fn the_knob_reaches_both_ends() {
+        let rect = Rect::new(16, 100, 448, 40);
+        let left = slider_knob(&M, rect, 0, 100);
+        let right = slider_knob(&M, rect, 100, 100);
+
+        assert_eq!(
+            left.x(),
+            rect.x() + M.slider_side_inset,
+            "hard left at zero"
+        );
+        assert_eq!(
+            right.x() + right.width(),
+            rect.x() + rect.width() - M.slider_side_inset,
+            "hard right at the maximum"
+        );
+    }
+
+    /// Monotonic: a larger value never moves the knob left. A rounding change
+    /// that broke this would look like a slider that jitters backwards.
+    #[test]
+    fn the_knob_never_moves_backwards() {
+        let rect = Rect::new(0, 0, 300, 40);
+        let mut previous = i32::MIN;
+        for value in 0..=100 {
+            let x = slider_knob(&M, rect, value, 100).x();
+            assert!(x >= previous, "value {value} moved the knob left");
+            previous = x;
+        }
+    }
+
+    /// A widget smaller than its own knob, in **both** directions.
+    ///
+    /// `travel` saturates at 1 rather than 0 — matching `xpui::value_at`,
+    /// which divides by the same number. And the knob is clamped to the rect
+    /// on each axis independently: the first version of this test used a rect
+    /// 40 tall against a 22-tall knob, so the height clamp never bound and
+    /// removing it passed. A slider in a short row would then paint a knob
+    /// overhanging whatever sits above and below.
+    #[test]
+    fn a_widget_smaller_than_the_knob_keeps_the_knob_inside_it() {
+        for rect in [
+            Rect::new(10, 0, 8, 40),  // narrow
+            Rect::new(10, 0, 200, 6), // short
+            Rect::new(10, 0, 8, 6),   // both
+        ] {
+            for value in [0, 50, 100] {
+                let knob = slider_knob(&M, rect, value, 100);
+                assert!(
+                    knob.x() >= rect.x(),
+                    "left edge escaped, {rect:?} at {value}"
+                );
+                assert!(
+                    knob.x() + knob.width() <= rect.x() + rect.width(),
+                    "right edge escaped, {rect:?} at {value}"
+                );
+                assert!(
+                    knob.y() >= rect.y(),
+                    "top edge escaped, {rect:?} at {value}"
+                );
+                assert!(
+                    knob.y() + knob.height() <= rect.y() + rect.height(),
+                    "bottom edge escaped, {rect:?} at {value}"
+                );
+            }
+        }
+    }
+
+    /// `max = 0` is a control with nothing to choose. It must not divide.
+    #[test]
+    fn a_zero_maximum_does_not_divide_by_it() {
+        let knob = slider_knob(&M, Rect::new(0, 0, 200, 40), 5, 0);
+        assert_eq!(knob.x(), M.slider_side_inset);
+    }
+}

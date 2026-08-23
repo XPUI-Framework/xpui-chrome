@@ -382,3 +382,13 @@ fn book(bounds: Rect, solid: bool) {
         ),
     );
 }
+
+/// The unit tests, in a file of their own.
+///
+/// They test private functions, so they cannot move to `tests/` — and this
+/// file was already near the 400-line limit, which counts everything under
+/// `src/`. A sibling keeps them beside the code they describe without the
+/// glyphs and their tests sharing one file's budget.
+#[cfg(test)]
+#[path = "icons_tests.rs"]
+mod tests;

@@ -1,0 +1,3 @@
+text        (475,40) "3" font=1004 regular
+text        (0,40) "System" font=1004 bold
+line        (32,63) -> (472,63)

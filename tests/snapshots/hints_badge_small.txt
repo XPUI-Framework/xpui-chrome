@@ -1,0 +1,3 @@
+line        (0,784) -> (479,784)
+text        (70,785) "Back" font=1004 regular
+text        (230,785) "Edit" font=1004 regular

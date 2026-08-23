@@ -1,0 +1,4 @@
+rect        (24,117 432x6) dither light
+rect        (24,117 257x6) filled
+rect        (274,109 14x22) dither light
+rect        (274,109 14x22) stroked
