@@ -127,6 +127,10 @@ Both backends in [`xpui-backends`](https://github.com/XPUI-Framework/xpui-backen
 ./build-and-test.sh
 ```
 
+The checks themselves are in [`xtask/`](xtask/) — this repository's own list,
+in Rust, holding nothing it does not run. `./build-and-test.sh fix` formats
+in place first.
+
 Forty tests assert against the recorded draw calls: which rectangles were
 asked for, and which strings, at which offsets. That is primitive-level rather
 than pixel-level — what the pixels look like is proved downstream, by
