@@ -3,7 +3,7 @@
 > ⚠️ **Under heavy development.** Not production-ready. The API can break
 > without notice. Use at your own risk.
 
-The eight themed components [`xpui`](../../xpui/) asks a backend to paint,
+The eight themed components [`xpui`](https://github.com/XPUI-Framework/xpui-framework/tree/main/crates/xpui) asks a backend to paint,
 painted from drawing primitives alone.
 
 `xpui` deliberately has no opinion about what a list row looks like. It asks,
@@ -46,7 +46,7 @@ xpui_chrome::plain_chrome! {
 ```
 
 Your backend implements `Canvas`, `TextMetrics`, `InputSource` and `Clock` —
-the contract is [`crates/xpui/docs/host.md`](../../xpui/docs/host.md). That
+the contract is [`crates/xpui/docs/host.md`](https://github.com/XPUI-Framework/xpui-framework/blob/main/crates/xpui/docs/host.md). That
 macro writes the whole of the fifth, `Chrome`.
 
 Four things you pass in, because four parties own them. The **metrics** size
