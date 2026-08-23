@@ -105,3 +105,7 @@ meant to be replaced by whatever the application's user reads.
 bottom edge mean, left to right. It decides which of the four standard words
 lands over which key — and a slot with nothing behind it stays blank, because
 naming a key the device does not have sends a person looking for it.
+
+## License
+
+MIT — see [LICENSE](LICENSE). Copyright (c) 2026 Thiago Holanda.
