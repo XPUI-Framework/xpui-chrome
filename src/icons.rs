@@ -1,21 +1,15 @@
 //! Icons drawn from lines and rectangles.
 //!
-//! A backend sitting on a component library has an asset set to reach for. One
-//! sitting on a drawing library has none, and `Canvas::draw_icon` quietly does
-//! nothing — so an `Icon` or an `IconToggle` leaves a hole where a screen
-//! expected a glyph, and `icon_size` reporting 0 means the layout does not even
-//! reserve space for the hole.
+//! A backend sitting on a drawing library has no asset set, and
+//! `Canvas::draw_icon` quietly does nothing — an `Icon` leaves a hole where a
+//! screen expected a glyph, and `icon_size` reporting 0 means the layout does
+//! not even reserve space for it. These are drawn, not stored: no bitmaps, no
+//! font, nothing in flash, and at 16 to 32 pixels on a 1-bit panel a drawn
+//! glyph and a stored one look much the same.
 //!
-//! These are drawn, not stored: no bitmaps, no font, nothing to place in flash.
-//! On a 296x128 e-ink strip that matters more than fidelity, and at the sizes
-//! these are used — 16 to 32 pixels on a 1-bit panel — a drawn glyph and a
-//! stored one look much the same anyway.
-//!
-//! # Which number means what
-//!
-//! `IconRef::kind` is deliberately opaque to the framework: *the host* decides
-//! what 3 means. [`Icon`] is this crate's answer, and a backend that ships real
-//! assets should map the same names onto those instead.
+//! `IconRef::kind` is opaque to the framework: the host decides what 3 means.
+//! [`Icon`] is this crate's answer; a backend that ships real assets maps the
+//! same names onto those instead.
 
 use xpui::host::IconRef;
 use xpui::{Point, Rect, Renderer};
@@ -52,7 +46,9 @@ pub enum Icon {
 }
 
 impl Icon {
-    /// Every icon, for a backend that wants to prove it can draw them all.
+    /// Every icon. `from_kind` looks a kind up here, so a variant missing
+    /// from this array is undrawable: `icon_size` answers 0 and `draw_icon`
+    /// returns early.
     pub const ALL: [Icon; 12] = [
         Icon::Sun,
         Icon::Moon,
@@ -143,9 +139,7 @@ fn centre(bounds: Rect) -> Point {
 /// Half-width of a circle of `radius` at `row` rows from its centre.
 ///
 /// Integer throughout: `no_std` has no `sqrt` without pulling in `libm`, and
-/// the largest `h` with `h² + row² <= r²` is the same answer. A first cut
-/// approximated this by insetting the last third of the rows, which produced a
-/// visibly square "disc" — a gear that looked like a cog-shaped box.
+/// the largest `h` with `h² + row² <= r²` is the same answer.
 fn half_width(radius: i32, row: i32) -> i32 {
     let limit = radius * radius - row * row;
     if limit <= 0 {
@@ -158,7 +152,6 @@ fn half_width(radius: i32, row: i32) -> i32 {
     half
 }
 
-/// A disc, filled or outlined.
 fn disc(bounds: Rect, radius: i32, filled: bool) {
     let middle = centre(bounds);
     for row in -radius..=radius {
@@ -194,7 +187,6 @@ fn sun(bounds: Rect, solid: bool) {
     let radius = bounds.width() / 4;
     disc(bounds, radius, solid);
 
-    // Eight rays, at the compass points and the diagonals.
     let reach = bounds.width() / 2 - 1;
     let inner = radius + radius / 2;
     for (dx, dy) in [
@@ -216,9 +208,8 @@ fn sun(bounds: Rect, solid: bool) {
 
 /// A crescent: a filled disc with a second disc bitten out of it.
 ///
-/// Always filled, whatever `variant` asked for. An *outlined* crescent is an
-/// arc with the bite erasing half of it, which comes out as a bracket rather
-/// than a moon — the first version of this drew exactly that.
+/// Always filled, whatever `variant` asked for: an *outlined* crescent is an
+/// arc with the bite erasing half of it, which reads as a bracket.
 fn moon(bounds: Rect, _solid: bool) {
     let radius = bounds.width() / 2 - 1;
     disc(bounds, radius, true);
@@ -261,7 +252,7 @@ fn gear(bounds: Rect, solid: bool) {
     }
 }
 
-/// An arrowhead pointing along (`dx`, `dy`). Two strokes from a point.
+/// An arrowhead pointing along (`dx`, `dy`).
 fn chevron(bounds: Rect, dx: i32, dy: i32) {
     let middle = centre(bounds);
     let reach = bounds.width() / 3;
@@ -383,12 +374,9 @@ fn book(bounds: Rect, solid: bool) {
     );
 }
 
-/// The unit tests, in a file of their own.
-///
-/// They test private functions, so they cannot move to `tests/` — and this
-/// file was already near the 400-line limit, which counts everything under
-/// `src/`. A sibling keeps them beside the code they describe without the
-/// glyphs and their tests sharing one file's budget.
+/// The unit tests, in a file of their own: they test private functions, so
+/// they cannot move to `tests/`, and a sibling keeps them beside the code
+/// without sharing this file's line budget.
 #[cfg(test)]
 #[path = "icons_tests.rs"]
 mod tests;

@@ -55,9 +55,8 @@ pub fn draw_button_hints(
     let y = centred_y(band, font);
 
     for (index, key) in keys.iter().enumerate() {
-        // What the screen said about *this* key, not about this position. A row
-        // that omits Back must not shift Back's hint onto Confirm's key, which
-        // is the bug this indirection exists to prevent.
+        // What the screen said about *this* key, not about this position: a
+        // row that omits Back must not shift Back's hint onto Confirm's key.
         let (hint, standard) = match key {
             RowKey::Back => (back, labels.standard_hints[0]),
             RowKey::Confirm => (confirm, labels.standard_hints[1]),
@@ -144,20 +143,11 @@ fn slider_knob(metrics: &Metrics, rect: Rect, value: i32, max: i32) -> Rect {
 
 /// Track, fill and knob — and, when the keys are on it, the knob says so.
 ///
-/// The three states have to be told apart at a glance on one bit of colour.
-/// The knob carries the first difference, because it is the one part of the
-/// control still painted paper: idle leaves it so, and focus fills it with a
-/// dither. An open control adds one outline on top of that. A device with no
-/// Left/Right pair changes what four keys mean when a value opens, and this is
-/// the only thing that says so.
-///
-/// **Two other marks were built and rejected by eye.** A bar down the leading
-/// edge lands where a stepper draws its `-` and reads as part of the glyph; a
-/// box around a wide, mostly empty control is the heaviest thing on the panel.
-/// And a second *shade* for the track is not available at all —
-/// `fill_rect_dither`'s flag is a parity, not a density, so both of its values
-/// are the same 50% checkerboard on opposite squares. That is what left the
-/// knob as the only place with a change of shade still in it.
+/// Three states on one bit of colour: the knob is the one part still painted
+/// paper, so idle leaves it so, focus fills it with a dither, and an open
+/// control adds one outline around the whole control. On a device with no
+/// Left/Right pair that outline is the only sign that Previous and Next now
+/// move the value.
 pub fn draw_slider(metrics: &Metrics, rect: Rect, value: i32, max: i32, state: ControlState) {
     if max <= 0 || rect.width() <= 0 || rect.height() <= 0 {
         // No range means no position to show. `Slider` guards this too, but
@@ -185,9 +175,8 @@ pub fn draw_slider(metrics: &Metrics, rect: Rect, value: i32, max: i32, state: C
         );
     }
 
-    // **The knob carries the selection**, for the reasons on `draw_slider`.
-    // Filled before it is outlined either way, so the track does not show
-    // through.
+    // **The knob carries the focus mark**, not the track. Filled before it is
+    // outlined either way, so the track does not show through.
     if state == ControlState::Idle {
         Renderer::fill_rect(knob, false);
     } else {
@@ -280,12 +269,10 @@ mod tests {
 
     /// A widget smaller than its own knob, in **both** directions.
     ///
-    /// `travel` saturates at 1 rather than 0 — matching `xpui::value_at`,
-    /// which divides by the same number. And the knob is clamped to the rect
-    /// on each axis independently: the first version of this test used a rect
-    /// 40 tall against a 22-tall knob, so the height clamp never bound and
-    /// removing it passed. A slider in a short row would then paint a knob
-    /// overhanging whatever sits above and below.
+    /// `travel` saturates at 1 rather than 0, matching `xpui::value_at`, and
+    /// the knob is clamped to the rect on each axis independently: a rect 40
+    /// tall against a 22-tall knob never binds the height clamp, so the short
+    /// case has to be its own.
     #[test]
     fn a_widget_smaller_than_the_knob_keeps_the_knob_inside_it() {
         for rect in [
@@ -315,7 +302,6 @@ mod tests {
         }
     }
 
-    /// `max = 0` is a control with nothing to choose. It must not divide.
     #[test]
     fn a_zero_maximum_does_not_divide_by_it() {
         let knob = slider_knob(&M, Rect::new(0, 0, 200, 40), 5, 0);

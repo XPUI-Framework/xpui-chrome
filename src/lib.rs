@@ -36,14 +36,10 @@
 //! same impl into the backend's own crate, where it is allowed.
 //!
 //! Nine of the trait's eleven methods are also plain functions, so a backend
-//! that has *some* components of its own can take only the ones it lacks
-//! rather than the whole impl. The other two are not on offer: `metric` is
-//! answered by [`Metrics::metric`], and `request_update` is one of the four things a
-//! backend passes in — see [`plain_chrome!`] for why.
-//!
-//! Nothing takes that route today. `xpui-embedded-graphics` takes all nine
-//! through the macro, and the FreeInkUI backend answers `Chrome` over its own
-//! C ABI without depending on this crate at all.
+//! that has *some* components of its own can take only the ones it lacks.
+//! The other two are not on offer: `metric` is answered by
+//! [`Metrics::metric`], and `request_update` is one of the four things a
+//! backend passes in.
 //!
 //! # How it reaches the canvas
 //!
@@ -79,12 +75,10 @@ pub use xpui::host::{KeyRow, RowKey};
 ///
 /// `request_update` has no sensible default — only the backend knows how to
 /// get pixels onto a panel — so it is one of the four things you pass in.
-///
 /// Each is a closure over the backend, so one carrying its own can answer
-/// `|backend| &backend.metrics` rather than reaching for a global. Three
-/// rather than one because three parties own them: the caller sizes the
-/// chrome, the application supplies the words, and the device says which key
-/// each word sits over.
+/// `|backend| &backend.metrics` rather than reaching for a global; why the
+/// other three — `metrics`, `labels`, `keys` — are separate is on
+/// [`draw_button_hints`].
 ///
 /// ```rust
 /// # use xpui_chrome::{KeyRow, Labels, Metrics};
@@ -247,11 +241,8 @@ pub mod __private {
     pub use xpui::host::{Chrome, ControlState, Hint, RowField, ThemeMetric};
 }
 
-/// The crate's prose, compiled.
-///
-/// A README that does not build is worse than none: this crate's only usage
-/// example passed the wrong form to its own macro for as long as nothing
-/// tried it.
+/// The crate's prose, compiled: a README that does not build is worse than
+/// none.
 #[cfg(doctest)]
 mod guides {
     #[doc = include_str!("../README.md")]

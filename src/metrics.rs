@@ -41,7 +41,7 @@ pub struct Metrics {
     /// list row.
     ///
     /// A *minimum*: the answer is this or the small font's line height,
-    /// whichever is larger. [`Fonts`](crate) are swappable, and a 20px face in
+    /// whichever is larger. Fonts are swappable, and a 20px face in
     /// a 17px band overprints the heading's own rule and spills into the
     /// content below.
     pub sub_header_height: i32,
@@ -56,8 +56,9 @@ pub struct Metrics {
     pub slider_side_inset: i32,
     pub slider_track_height: i32,
 
-    /// Width of the scroll indicator, and its inset from the panel edge.
+    /// Width of the scroll indicator.
     pub scrollbar_width: i32,
+    /// The scroll indicator's inset from the panel edge.
     pub scrollbar_inset: i32,
 
     /// Border thickness for a dialog.
@@ -71,13 +72,9 @@ impl Metrics {
     /// The same chrome with no band reserved for button hints.
     ///
     /// For a device whose Back and Confirm come from its touchscreen rather
-    /// than from a row of keys along the bottom. The firmware's own themes
-    /// return before drawing a single hint on those boards, for the same
-    /// reason: a hint names a key, and naming one that is not there sends a
-    /// person looking for it.
-    ///
-    /// The height is the reservation as well as the drawing, so the content
-    /// gains the space rather than leaving a gap where the band would be.
+    /// than a row of keys: a hint names a key, and naming one that is not
+    /// there sends a person looking for it. The height is the reservation as
+    /// well as the drawing, so the content gains the space.
     pub const fn without_button_hints(&self) -> Metrics {
         let mut metrics = *self;
         metrics.button_hints_height = 0;
@@ -87,17 +84,11 @@ impl Metrics {
     /// The same chrome, sized for a board that asks for larger targets.
     ///
     /// `percent` is a board's UI scale: 100 leaves every number alone, 120
-    /// turns a 40px row into 48. An integer percentage rather than a float
-    /// because `Metrics` is `Eq` and every preset is a `const` — neither of
-    /// which an `f32` allows — and because the device targets have no
-    /// floating-point unit, so a multiply by 1.2 there is a soft-float call in
-    /// code every layout pass runs.
-    ///
-    /// Everything counted in pixels scales. One field does not:
-    /// [`dialog_width_percent`] is already a ratio of the panel, and scaling a
-    /// ratio pushes the dialog past the edge it is measured against; and
-    /// words do not scale at all, which is why [`Labels`](crate::Labels) is a
-    /// separate thing to hand a painter.
+    /// turns a 40px row into 48. An integer percentage because `Metrics` is
+    /// `Eq` and every preset is `const`, and because the device targets have
+    /// no floating-point unit. [`dialog_width_percent`] does not scale — it
+    /// is already a ratio of the panel — and words do not scale at all, which
+    /// is why [`Labels`](crate::Labels) is a separate thing.
     ///
     /// [`dialog_width_percent`]: Metrics::dialog_width_percent
     pub const fn scaled(&self, percent: u16) -> Metrics {
@@ -172,10 +163,8 @@ impl Metrics {
         }
     }
 
-    /// How many list rows fit in the content band of a panel this tall.
-    ///
-    /// The question every preset exists to answer, so it is worth being able
-    /// to ask it directly — and worth testing, because the answer was zero.
+    /// How many list rows fit in the content band of a panel this tall: the
+    /// question every preset exists to answer.
     pub const fn list_rows_for(&self, panel_height: i32) -> i32 {
         let band = panel_height - self.button_hints_height - self.content_top_const();
         let stride = self.list_row_height + self.list_row_gap;
@@ -223,8 +212,7 @@ impl Metrics {
             ThemeMetric::SliderKnobWidth => self.slider_knob_width,
             ThemeMetric::SliderKnobHeight => self.slider_knob_height,
             ThemeMetric::SliderSideInset => self.slider_side_inset,
-            // The larger of the token and what the font actually needs; see
-            // the field's own note.
+            // See `sub_header_height`'s own note.
             ThemeMetric::SubHeaderHeight => {
                 self.sub_header_height.max(Font::ui_small().line_height())
             }

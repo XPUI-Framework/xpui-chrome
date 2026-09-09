@@ -42,8 +42,8 @@ impl Metrics {
 
     /// For a panel of roughly 320x240 — a Tufty 2040, or any small colour LCD.
     ///
-    /// Chrome that costs 96 pixels of a 800-pixel panel costs the same 96 of a
-    /// 240-pixel one, which is 40% of it. Everything shrinks, and touch
+    /// Chrome that costs 100 pixels of an 800-pixel panel costs the same 100
+    /// of a 240-pixel one, which is 42% of it. Everything shrinks, and touch
     /// targets shrink furthest: a board with five buttons and no touchscreen
     /// does not need a 44-pixel finger target.
     pub const COMPACT: Metrics = Metrics {

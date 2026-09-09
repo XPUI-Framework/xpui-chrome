@@ -6,12 +6,12 @@
 //! because something has to be shipped, and every one of these is meant to be
 //! replaced.
 
-/// What a hint slot says.
+/// The words on the hint bar: four standard, three for an open value.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Labels {
-    /// The four standard hint words, in meaning order, for when a screen passes
-    /// [`Hint::Standard`](xpui::host::Hint), in meaning order: back, confirm,
-    /// previous, next.
+    /// The four standard hint words, in meaning order — back, confirm,
+    /// previous, next — for when a screen passes
+    /// [`Hint::Standard`](xpui::host::Hint).
     ///
     /// Which of these words lands over which key is the device's
     /// [`KeyRow`](xpui::KeyRow), not this.
@@ -44,9 +44,9 @@ impl Labels {
     /// Shorter still, for the narrowest band here: a 296-pixel strip divided
     /// by three keys, about 98 pixels a slot.
     ///
-    /// Where a word has to give, abbreviating beats truncating — a reader can
-    /// learn `Dn` and cannot learn `Canc…`. Which words need it is a judgement
-    /// about the face in use, not a calculation; these are the ones the small
+    /// Where a word has to give, a shorter word beats a truncated one — `Dn`
+    /// and `Undo`, never `Canc…`. Which words need it is a judgement about
+    /// the face in use, not a calculation; these are the ones the small
     /// preset was built with.
     pub const ENGLISH_SHORT: Labels = Labels {
         standard_hints: ["Back", "OK", "Up", "Dn"],
@@ -60,9 +60,7 @@ impl Labels {
     /// The same dispatch, deliberately: a panel small enough to need
     /// [`Metrics::SMALL`](crate::Metrics::SMALL) is small enough to need the
     /// words that preset was measured with, and picking one without the other
-    /// is how a hint bar ends up overrunning its slot. `Metrics` and `Labels` are separate types
-    /// because they have separate owners, not because a caller choosing by
-    /// panel size should have to choose twice.
+    /// is how a hint bar ends up overrunning its slot.
     pub const fn for_panel(width: i32, height: i32) -> Labels {
         let _ = width;
         if height <= 160 {

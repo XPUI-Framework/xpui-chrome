@@ -8,9 +8,9 @@ use crate::metrics::Metrics;
 
 /// How many of `rows` will actually be painted into `rect`.
 ///
-/// `draw_list` stops before a row that does not fit, so the space it leaves can
-/// be most of a row — 224 pixels on a 480x800 panel. A caller that needs to
-/// know where the list really ends has to ask rather than divide.
+/// `draw_list` stops before a row that does not fit, so the space it leaves
+/// can be up to one row's stride. A caller that needs to know where the list
+/// really ends has to ask rather than divide.
 pub fn rows_that_fit<'a>(
     metrics: &Metrics,
     rect: Rect,

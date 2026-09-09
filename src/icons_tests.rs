@@ -30,8 +30,8 @@ fn a_row_past_the_radius_has_no_width() {
     assert_eq!(half_width(0, 0), 0);
 }
 
-/// The fault that motivated the loop: approximating the last third of the
-/// rows made a visibly square disc. A circle's widest row is its middle.
+/// A circle's widest row is its middle; an approximation that insets the
+/// last rows makes a square disc.
 #[test]
 fn the_widest_row_is_the_middle_one() {
     let radius = 12;
