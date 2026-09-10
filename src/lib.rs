@@ -48,6 +48,7 @@
 //! which is the one that called them. Nothing here needs to know what that is.
 
 #![cfg_attr(target_os = "none", no_std)]
+#![deny(missing_docs)]
 
 extern crate alloc;
 
@@ -241,10 +242,14 @@ pub mod __private {
     pub use xpui::host::{Chrome, ControlState, Hint, RowField, ThemeMetric};
 }
 
-/// The crate's prose, compiled: a README that does not build is worse than
+/// The crate's prose, compiled: a page that does not build is worse than
 /// none.
 #[cfg(doctest)]
 mod guides {
     #[doc = include_str!("../README.md")]
     pub mod readme {}
+    #[doc = include_str!("../docs/components.md")]
+    pub mod components {}
+    #[doc = include_str!("../docs/design.md")]
+    pub mod design {}
 }

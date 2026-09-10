@@ -14,8 +14,11 @@ use crate::metrics::Metrics;
 /// row 2 responds to a touch, and nothing about that failure looks wrong until
 /// somebody taps it.
 pub struct PopupLayout {
+    /// The dialog's outer rectangle, border included.
     pub frame: Rect,
+    /// The first option's row; the rest follow at `stride`.
     pub first_row: Rect,
+    /// From one row's top to the next.
     pub stride: i32,
     /// How many rows actually fit on the panel.
     ///
@@ -28,6 +31,7 @@ pub struct PopupLayout {
     pub visible: usize,
 }
 
+/// Where a dialog titled `title` with `count` options lands on the panel.
 pub fn popup_layout(metrics: &Metrics, title: &str, count: usize) -> PopupLayout {
     let screen = Renderer::screen_size();
     let title_font = Font::ui().bold();

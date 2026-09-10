@@ -3,29 +3,26 @@
 > ⚠️ **Under heavy development.** Not production-ready. The API can break
 > without notice. Use at your own risk.
 
-The eight themed components [`xpui`](https://github.com/XPUI-Framework/xpui-framework) asks a backend to paint,
-painted from drawing primitives alone.
+[![CI](https://github.com/XPUI-Framework/xpui-chrome/actions/workflows/ci.yml/badge.svg)](https://github.com/XPUI-Framework/xpui-chrome/actions/workflows/ci.yml) [![MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-`xpui` deliberately has no opinion about what a list row looks like. It asks,
-and a backend answers. A backend sitting on a component library — FreeInkUI —
-answers by calling that library, and a Rust screen ends up pixel-identical to a
-native one. A backend sitting on a *drawing* library has nothing to call, and
-would otherwise have to write a widget toolkit before it could show anything.
-
-This is that toolkit, once, for all of them:
-
-| | |
-|---|---|
-| `draw_list` | rows, subtitles, values, and the selected-row marker |
-| `draw_option_popup` + `option_popup_row_rect` | a centred dialog and where its rows are |
-| `draw_slider` | dithered track, fill, and a knob carrying the control's state: paper when idle, dithered once the keys are on it, with the whole control outlined as well when it is open |
-| `draw_progress_bar` | outline and proportional fill |
-| `draw_header` | title band and rule |
-| `draw_sub_header` | group heading with a trailing rule |
-| `draw_button_hints` | four slots along the bottom |
-| `draw_scroll_indicator` | a thumb, and nothing at all when everything fits |
+The eight themed components [`xpui`](https://github.com/XPUI-Framework/xpui-framework)
+asks a backend to paint — a list, a dialog, a slider, a progress bar, a
+header, a sub-header, a button-hint bar and a scroll indicator — painted from
+drawing primitives alone. A backend sitting on a *drawing* library has nothing
+to answer `xpui`'s `Chrome` trait with, and would otherwise have to write a
+widget toolkit before it could show anything; this crate is that toolkit, once, for all of them.
+`no_std`, and it depends on `xpui` and nothing else.
 
 ## Using it
+
+```toml
+[dependencies]
+xpui-chrome = { git = "https://github.com/XPUI-Framework/xpui-chrome", branch = "main" }
+```
+
+Your backend implements `Canvas`, `TextMetrics`, `InputSource` and `Clock` —
+the contract is [`docs/host.md`](https://github.com/XPUI-Framework/xpui-framework/blob/main/docs/host.md)
+— and one macro writes the whole of the fifth, `Chrome`:
 
 ```rust
 # struct MyBackend;
@@ -45,81 +42,13 @@ xpui_chrome::plain_chrome! {
 }
 ```
 
-Your backend implements `Canvas`, `TextMetrics`, `InputSource` and `Clock` —
-the contract is [`docs/host.md`](https://github.com/XPUI-Framework/xpui-framework/blob/main/docs/host.md). That
-macro writes the whole of the fifth, `Chrome`.
-
-Four things you pass in, because four parties own them. The **metrics** size
-the chrome and come from whoever knows the panel. The **labels** are words, and
-only an application knows what language its user reads. The **key row** says
-which word sits over which key, which is a fact about the hardware. And
-`request_update` is there because only a backend knows how to get pixels onto a
-panel.
-
-All four are closures over the backend, not plain values, so a backend
-carrying its own can answer `|backend| &backend.metrics`: two backends in one
-process may be driving two different panels, in two different languages, with
-two different key rows, and globals would give them one of each between them.
-
-Nine of the trait's eleven methods are also plain functions, so a backend with
-*some* components of its own can take only the ones it lacks rather than the
-whole impl. The other two are not on offer: `metric` is answered by
-`Metrics::metric`, and `request_update` is the one a backend passes in.
-
-No backend here takes that route yet. `xpui-embedded-graphics` takes all nine
-through the macro, and the FreeInkUI backend answers `Chrome` over its own C
-ABI without depending on this crate.
-
-## Two things worth knowing
-
-**Selection is a marker, not an inversion.** `Canvas::draw_text` always paints
-ink, so filling a row black and drawing the label over it erases the label. The
-selected row gets a bar down its leading edge and an outline instead.
-
-**One layout function serves the dialog and its hit-testing.**
-`draw_option_popup` paints the rows and `option_popup_row_rect` reports where
-they are; both go through `popup_layout`. Deriving that geometry twice is how a
-dialog ends up painting row 3 where row 2 responds to a touch — a failure that
-looks completely fine until somebody taps it. There is a test that catches
-drift of two pixels.
-
-## Why a macro rather than a blanket impl
-
-`impl<T: Canvas + TextMetrics> Chrome for T` is what this obviously wants to be,
-and it is illegal: both the trait and the type parameter are foreign to this
-crate, so the orphan rule rejects it (`E0210`). The macro writes the same impl
-into your crate, where it is allowed.
-
-## Metrics, labels and a key row
-
-`Metrics` holds every number these functions paint to — the same values
-`ThemeMetric` asks for, plus a few this crate needs and `xpui` does not name.
-Change those rather than the drawing code. `content_bottom` is derived from the
-live panel height rather than stored, so one `Metrics` works on any panel.
-
-`Labels` holds the words the hint bar shows. They are not measurements and they
-do not scale; English ships because something has to, and every one of them is
-meant to be replaced by whatever the application's user reads.
-
-`KeyRow` is `xpui`'s, not this crate's, and says what the keys along a device's
-bottom edge mean, left to right. It decides which of the four standard words
-lands over which key — and a slot with nothing behind it stays blank, because
-naming a key the device does not have sends a person looking for it.
-
-## Using it
-
-```toml
-[dependencies]
-xpui-chrome = { git = "https://github.com/XPUI-Framework/xpui-chrome", branch = "main" }
-```
-
-`no_std`, like everything it sits between. It depends on
-[`xpui`](https://github.com/XPUI-Framework/xpui-framework) and nothing else — not on a backend, not on a
-board — because what it paints with are the drawing primitives a backend hands
-it.
-
-Both backends in [`xpui-backends`](https://github.com/XPUI-Framework/xpui-backends) use it, and
-[`xpui-simulator`](https://github.com/XPUI-Framework/xpui-simulator) through them.
+Four things go in because four parties own them: the metrics come from
+whoever knows the panel, the labels from whoever knows the user's language,
+the key row from the hardware, and `request_update` from the one thing that
+can get pixels onto a panel — the backend.
+[docs/components.md](docs/components.md) says what each is and why they are
+closures. Nothing is on crates.io yet, which is why the dependency above is
+a `git` URL.
 
 ## Checking it
 
@@ -129,12 +58,16 @@ Both backends in [`xpui-backends`](https://github.com/XPUI-Framework/xpui-backen
 
 The checks themselves are in [`xtask/`](xtask/) — this repository's own list,
 in Rust, holding nothing it does not run. `./build-and-test.sh fix` formats
-in place first.
+in place first. How a change is reviewed is in
+[docs/contributing.md](docs/contributing.md).
 
-Forty tests assert against the recorded draw calls: which rectangles were
-asked for, and which strings, at which offsets. That is primitive-level rather
-than pixel-level — what the pixels look like is proved downstream, by
-[`xpui-gallery`](https://github.com/XPUI-Framework/xpui-gallery)'s seventy board captures.
+## Where next
+
+| | |
+|---|---|
+| [docs/components.md](docs/components.md) | the eight components, the four things a backend passes in, and the metrics, labels and key row they paint from |
+| [docs/design.md](docs/design.md) | the arguments behind choices the code states in one sentence |
+| [docs/contributing.md](docs/contributing.md) | building it, the gate, the five review steps, and how a commit is written |
 
 ## Where it sits
 

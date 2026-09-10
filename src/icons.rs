@@ -32,12 +32,15 @@ pub enum Icon {
     ChevronLeft = 3,
     /// Forward, or next, or "this row opens something".
     ChevronRight = 4,
+    /// Up, or previous.
     ChevronUp = 5,
+    /// Down, or next, or "this opens below".
     ChevronDown = 6,
     /// A confirmation, or a setting that is on.
     Check = 7,
     /// A dismissal, or a setting that is off.
     Cross = 8,
+    /// Charge; every variant past the first fills the body.
     Battery = 9,
     /// Wireless, in the usual three arcs.
     Wifi = 10,

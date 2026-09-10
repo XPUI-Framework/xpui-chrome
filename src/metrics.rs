@@ -18,6 +18,7 @@ use xpui::{Font, Renderer};
 pub struct Metrics {
     /// Gap above the header band.
     pub top_padding: i32,
+    /// Height of the header band.
     pub header_height: i32,
     /// The standard gap between stacked elements.
     pub vertical_spacing: i32,
@@ -26,9 +27,12 @@ pub struct Metrics {
     pub spacing_small: i32,
     /// Height reserved at the bottom for button hints.
     pub button_hints_height: i32,
+    /// Space between the panel's side edges and the content.
     pub content_side_padding: i32,
 
+    /// Height of a one-line list row.
     pub list_row_height: i32,
+    /// Height of a list row carrying a subtitle.
     pub list_row_height_with_subtitle: i32,
     /// Space left between one row and the next.
     pub list_row_gap: i32,
@@ -46,14 +50,19 @@ pub struct Metrics {
     /// content below.
     pub sub_header_height: i32,
 
+    /// Height of the progress bar.
     pub progress_bar_height: i32,
     /// Smallest comfortably tappable dimension.
     pub min_touch_size: i32,
 
+    /// The slider knob's width. `xpui` converts a touch to a value with it,
+    /// so it must be the number `draw_slider` paints with.
     pub slider_knob_width: i32,
+    /// The slider knob's height, and so the least height its track needs.
     pub slider_knob_height: i32,
     /// Padding the slider track is inset by at each end.
     pub slider_side_inset: i32,
+    /// Height of the slider's track.
     pub slider_track_height: i32,
 
     /// Width of the scroll indicator.
@@ -63,6 +72,7 @@ pub struct Metrics {
 
     /// Border thickness for a dialog.
     pub dialog_border: i32,
+    /// Space between a dialog's border and what it holds.
     pub dialog_padding: i32,
     /// Fraction of the panel width a dialog occupies, as a percentage.
     pub dialog_width_percent: i32,
