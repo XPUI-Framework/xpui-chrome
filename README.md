@@ -1,9 +1,10 @@
+[![CI](https://github.com/XPUI-Framework/xpui-chrome/actions/workflows/ci.yml/badge.svg)](https://github.com/XPUI-Framework/xpui-chrome/actions/workflows/ci.yml) [![MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 # `xpui-chrome`
 
-> ⚠️ **Under heavy development.** Not production-ready. The API can break
-> without notice. Use at your own risk.
-
-[![CI](https://github.com/XPUI-Framework/xpui-chrome/actions/workflows/ci.yml/badge.svg)](https://github.com/XPUI-Framework/xpui-chrome/actions/workflows/ci.yml) [![MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+> [!WARNING]
+> Under heavy development. Not production-ready. The API can break without
+> notice. Use at your own risk.
 
 The eight themed components [`xpui`](https://github.com/XPUI-Framework/xpui-framework)
 asks a backend to paint — a list, a dialog, a slider, a progress bar, a
