@@ -15,10 +15,10 @@ const KEYS: KeyRow = KeyRow::READER;
 
 /// Three keys along the bottom, and one of them is Back.
 ///
-/// The arrangement both Pimoroni boards have. It was inexpressible while the
-/// painter took a three-key row to mean "no Back key", which is the fault
-/// [`a_three_key_row_with_back_labels_its_own_keys`] pins.
-/// Confirm **first**, Back second — deliberately not any real board's order.
+/// The arrangement both Pimoroni boards have, which a painter that takes a
+/// three-key row to mean "no Back key" cannot express;
+/// `a_row_labels_its_keys_by_job_not_by_position` pins that. Confirm
+/// **first**, Back second — deliberately not any real board's order.
 ///
 /// A row in canonical order cannot tell a painter that reads `RowKey` from one
 /// that just walks its slots, because position and job coincide. This one can:
@@ -108,45 +108,32 @@ fn every_dialog_row_is_painted_where_hit_testing_says_it_is() {
     let options = ["Serif", "Sans", "Mono", "Slab"];
     let get = |index: usize| options.get(index).copied();
 
-    backend.draw_option_popup("Font", &get, options.len(), 1);
+    for index in 0..options.len() {
+        testing::reset();
+        backend.draw_option_popup("Font", &get, options.len(), index as i32);
 
-    // Every row's title, and the rect it was drawn at.
-    let painted: Vec<(String, i32)> = testing::ops_log()
-        .into_iter()
-        .filter_map(|op| match op {
-            DrawOp::Text { origin, text, .. } if options.contains(&text.as_str()) => {
-                Some((text, origin.y))
-            }
-            _ => None,
-        })
-        .collect();
+        // A selected row is outlined along exactly the rect it was painted
+        // in, and that outline is the last one drawn: the frame's come first.
+        // So equality, not "the label is somewhere inside" — a row shifted by
+        // less than its own height, or by any amount across, passes that.
+        let painted = testing::ops_log()
+            .into_iter()
+            .rev()
+            .find_map(|op| match op {
+                DrawOp::Rect {
+                    rect,
+                    kind: RectKind::Stroked,
+                    ..
+                } => Some(rect),
+                _ => None,
+            });
 
-    assert_eq!(painted.len(), options.len(), "every option was drawn");
-
-    // Where the label sits *inside* its own row. If paint and hit-test derive
-    // the same geometry this offset is identical for every row; if they drift
-    // it creeps, and it creeps by less than a row height — which is why
-    // "is the text somewhere inside the rect" does not catch it.
-    let offsets: Vec<i32> = painted
-        .iter()
-        .enumerate()
-        .map(|(index, (label, drawn_y))| {
-            let rect = backend
-                .option_popup_row_rect("Font", &get, options.len(), index)
-                .unwrap_or_else(|| panic!("no rect reported for row {index}"));
-            assert!(
-                *drawn_y >= rect.y() && *drawn_y < rect.y() + rect.height(),
-                "row {index} ({label}) was painted at y={drawn_y}, outside {rect:?}"
-            );
-            drawn_y - rect.y()
-        })
-        .collect();
-
-    assert!(
-        offsets.windows(2).all(|pair| pair[0] == pair[1]),
-        "the painted rows and the hit-test rects drift apart: \
-         label offsets within their own row were {offsets:?}, which must all be equal"
-    );
+        assert_eq!(
+            backend.option_popup_row_rect("Font", &get, options.len(), index),
+            painted,
+            "row {index} answers taps somewhere other than where it was painted"
+        );
+    }
 }
 
 #[test]
@@ -439,9 +426,9 @@ fn each_mode_word_lands_on_the_key_it_names() {
 
 /// A row labels its keys by what each one does, not by where it sits.
 ///
-/// The bug this replaces: a row of three was taken to *mean* a badge with no
-/// Back key, so the painter dropped Back and started at Confirm — every label
-/// one place left of the key it named.
+/// A painter that takes a row of three to *mean* a badge with no Back key
+/// drops Back and starts at Confirm — every label one place left of the key it
+/// names.
 ///
 /// The fixture row is deliberately out of canonical order, because that is the
 /// only arrangement that can tell the two painters apart. Mutation that must
@@ -474,7 +461,7 @@ fn a_row_labels_its_keys_by_job_not_by_position() {
         assert_eq!(text, expected, "slot {index} names the key's own job");
 
         // A relationship, not a range: the label's centre sits at its slot's
-        // centre. `(0..slot).contains(x)` passed a 72-pixel drift, which puts a
+        // centre. `(0..slot).contains(x)` passes a 72-pixel drift, which puts a
         // label straddling the boundary between two keys.
         let centre = x + font.text_width(text) / 2;
         let want = slot * index as i32 + slot / 2;
@@ -675,11 +662,15 @@ fn truncation_cuts_multibyte_text_safely() {
     // Narrow enough to force truncation.
     backend.draw_list(Rect::new(0, 0, 80, 200), 1, -1, &cells);
 
+    // Drawn as the kept prefix and then the ellipsis, butted against it.
     let drawn = testing::drawn_text();
-    assert_eq!(drawn.len(), 1);
-    let text = &drawn[0].2;
-    assert!(text.ends_with('…'), "it was truncated: {text:?}");
-    assert!(text.chars().count() < long.chars().count());
+    let [(x, _, prefix, _, _), (ellipsis_x, _, ellipsis, _, _)] = drawn.as_slice() else {
+        panic!("a cut label is its prefix and an ellipsis: {drawn:?}");
+    };
+    assert_eq!(ellipsis, "…", "it was truncated: {drawn:?}");
+    assert!(long.starts_with(prefix.as_str()));
+    assert!(prefix.chars().count() < long.chars().count());
+    assert_eq!(*ellipsis_x, x + Font::ui().text_width(prefix));
 }
 
 /// Every metric `xpui` can ask for has to come back, or a layout silently
@@ -807,12 +798,12 @@ fn both_ends_of_a_slider_are_reachable_by_touch() {
     assert!(xpui::value_at(track, left, 100) < 100);
 }
 
-// -- what a review found, turned into tests --------------------------------
+// -- what must stay inside the panel ---------------------------------------
 
-/// A long subtitle used to be positioned at `right - its own width`, which
-/// goes negative, and then left the title with negative room so it was dropped
-/// entirely. Both halves silent: a header showing only a subtitle, painted
-/// partly off the left of the panel.
+/// A long subtitle placed at `right - its own width` starts left of the panel
+/// and leaves the title negative room, so the title is dropped entirely. Both
+/// halves are silent: a header showing only a subtitle, painted partly off the
+/// left of the panel.
 #[test]
 fn a_long_subtitle_neither_escapes_the_panel_nor_eats_the_title() {
     let backend = start();
@@ -851,9 +842,9 @@ fn a_long_right_label_neither_escapes_its_rect_nor_eats_the_heading() {
     }
 }
 
-/// A dialog with more options than the panel is tall used to draw its frame
-/// past the bottom edge and paint rows nobody could see or touch — while the
-/// widget still gave every one of them a focus stop.
+/// A dialog drawn at full height with more options than the panel is tall
+/// runs its frame past the bottom edge and paints rows nobody can see or
+/// touch.
 #[test]
 fn a_dialog_never_grows_past_the_panel() {
     let backend = start();
@@ -885,8 +876,8 @@ fn a_dialog_never_grows_past_the_panel() {
     );
 }
 
-/// The scroll thumb used to have a minimum height but no maximum, so on a
-/// short track it spilled past the bottom — onto whatever sits below the
+/// The scroll thumb has a minimum height, and without a maximum as well it
+/// spills past the bottom of a short track — onto whatever sits below the
 /// viewport, because the indicator is drawn after the clip is lifted.
 #[test]
 fn a_scroll_thumb_never_outgrows_its_track() {
@@ -998,6 +989,29 @@ fn truncated_text_fits_the_width_it_was_given() {
             );
         }
     }
+}
+
+/// A slot too narrow for even the ellipsis paints nothing.
+///
+/// A partial glyph reads as a rendering fault, where an empty slot reads as a
+/// slot with no room. Every other truncation test leaves room for the `…`.
+#[test]
+fn a_slot_narrower_than_the_ellipsis_paints_no_text() {
+    let backend = start();
+    let too_narrow = Font::ui_small().bold().text_width("…") - 1;
+    assert!(too_narrow > 0, "the fixture needs a slot that is not empty");
+
+    backend.draw_sub_header(
+        Rect::new(0, 0, too_narrow, 17),
+        "A heading far wider than its slot",
+        None,
+    );
+
+    assert_eq!(
+        testing::drawn_text(),
+        vec![],
+        "no partial label, no ellipsis"
+    );
 }
 
 // -- panels smaller than a phone -------------------------------------------
@@ -1133,10 +1147,9 @@ fn scaling_leaves_what_is_not_a_pixel_alone() {
         Metrics::DEFAULT.dialog_width_percent
     );
 
-    // The hint words used to be the other half of this assertion. They are not
-    // in `Metrics` any more, so `scaled` cannot reach them and the type system
-    // makes the claim instead of a test — which is why there is one assertion
-    // here and there used to be two.
+    // The hint words are not pixels either, but they live in `Labels`, which
+    // `scaled` cannot reach: the type system makes that half of the claim, so
+    // there is no assertion here for it.
 }
 
 /// A hairline is one pixel and cannot become none: a rule scaled to zero stops

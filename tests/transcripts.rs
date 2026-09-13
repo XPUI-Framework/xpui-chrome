@@ -81,12 +81,11 @@ fn a_header_with_a_subtitle() {
         xpui_chrome::draw_header(&metrics, Some("Settings"), Some("Wi-Fi"));
         testing::assert_snapshot(&format!("header_{name}"));
 
-        // A title long enough to be **truncated** by the room the subtitle
-        // leaves. That is the only condition under which `vertical_spacing` is
-        // observable: the painter subtracts it from `room`, and `room` is the
-        // width the title is cut to. A title that fits reads none of it — the
-        // first version of this case used one, and removing the subtraction
-        // passed.
+        // A title long enough to be **truncated**, under `DEFAULT`, by the
+        // room the subtitle leaves. That is the only condition under which
+        // `vertical_spacing` is observable: the painter subtracts it from
+        // `room`, and `room` is the width the title is cut to. A title that
+        // fits reads none of it, and passes with the subtraction removed.
         start();
         xpui_chrome::draw_header(
             &metrics,
@@ -172,7 +171,7 @@ fn a_slider_in_each_of_its_states() {
 /// The one component that reads nothing from `Metrics` — it draws entirely
 /// from the rect it is handed. So the rect is sized the way a caller sizes it,
 /// from `progress_bar_height`; otherwise every preset's transcript is the same
-/// file, which is what the first version of this committed twice.
+/// file, committed three times.
 ///
 /// The three degenerate cases are here because each returns early on its own
 /// line, and a bar that silently draws nothing is indistinguishable from one

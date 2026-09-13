@@ -34,7 +34,8 @@ change is done, and read the real exit code.
 
 Nothing a sibling lacks. The two bare-metal clippy runs under `lint`, on
 `riscv32imc` and `thumbv6m`, lint this crate alone — `-p xpui-chrome`, on
-the targets `BARE_METAL` names; they are the only checks that reach its `no_std` paths before a firmware build does.
+the targets `BARE_METAL` names; they are the only checks that reach its
+`no_std` paths before a firmware build does.
 
 ## Style that bites here
 
@@ -55,17 +56,19 @@ the targets `BARE_METAL` names; they are the only checks that reach its `no_std`
 - **Every `pub` item is documented.** `#![deny(missing_docs)]` is on.
 - **A file under `src/` is at most 400 lines.** `xtask/src/tree.rs`
   and `src/icons.rs` are both within fifteen lines of it.
-- **Thirty-one tests assert on recorded draw calls**, nine more on `Metrics`
-  arithmetic, and thirty-nine goldens in
-  `tests/snapshots/` are call transcripts. A documentation change never
-  touches them; if one changes, something else did.
+- **Twenty-six of `tests/paint.rs`'s forty tests assert on recorded draw
+  calls**; nine of the other fourteen are `Metrics` arithmetic. The
+  thirty-nine goldens in `tests/snapshots/` are call transcripts. A
+  documentation change never touches them; if one changes, something else
+  did.
 
 ## Where the documentation lives, and what proves each piece
 
 | Document | Proven by |
 |---|---|
 | [`README.md`](README.md) | its `rust` fence is a doctest, mounted by `src/lib.rs` |
-| [`docs/components.md`](docs/components.md) | mounted by `src/lib.rs`; it carries no `rust` fence, so what is checked is its paths |
+| [`docs/README.md`](docs/README.md) | its paths resolve; the README-heading check exempts it, because it is the index of `docs/`, not a front page |
+| [`docs/components.md`](docs/components.md) | `documented paths resolve`; `src/lib.rs` mounts it, which compiles nothing while it carries no `rust` fence |
 | [`docs/design.md`](docs/design.md) | mounted by `src/lib.rs`; likewise |
 | [`docs/contributing.md`](docs/contributing.md) | every path and command it gives resolves; the umbrella command is `xpui-dev`'s |
 | `AGENTS.md` | the stage list above is compared to what the gate runs |

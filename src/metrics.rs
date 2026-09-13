@@ -58,7 +58,8 @@ pub struct Metrics {
     /// The slider knob's width. `xpui` converts a touch to a value with it,
     /// so it must be the number `draw_slider` paints with.
     pub slider_knob_width: i32,
-    /// The slider knob's height, and so the least height its track needs.
+    /// The slider knob's height, and so the least height a slider's rect
+    /// needs to show the knob whole.
     pub slider_knob_height: i32,
     /// Padding the slider track is inset by at each end.
     pub slider_side_inset: i32,

@@ -32,7 +32,9 @@ Two things bite here more than anywhere else:
   ```
 
   A blessed golden is an assertion you have made. What the pixels look like
-  is proved downstream, by `xpui-gallery`'s board captures.
+  is proved downstream, by
+  [`xpui-gallery`](https://github.com/XPUI-Framework/xpui-gallery)'s board
+  captures.
 
 ## The review
 
@@ -48,9 +50,9 @@ Five steps, in order, none skipped:
 5. They say commit.
 
 A test that cannot fail is worse than no test. Before adding one, break the
-code on purpose and confirm the test notices. Prefer an assertion that pins a
-relationship — the label sits at the same offset in every row — over one that
-pins a number.
+code on purpose and confirm the test notices. Prefer an assertion that pins
+a relationship — a dialog row answers taps in exactly the rect it was
+painted in — over one that pins a number.
 
 ## Commits
 
@@ -64,8 +66,8 @@ found. No self-attribution.
 `xpui-embedded-graphics` in `xpui-backends`, the simulator and the gallery
 depend on this crate through a `git` dependency on `main`, so a change to a
 public item or to what a component paints reaches all three. The FreeInkUI
-backend answers `Chrome` over its own C ABI and never sees one. Before pushing one, run the
-umbrella:
+backend answers `Chrome` over its own C ABI and never sees one. Before
+pushing one, run the umbrella:
 
 ```bash
 for d in ../xpui*/; do git -C "$d" fetch --quiet --all; done

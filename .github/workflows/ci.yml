@@ -7,12 +7,11 @@ on:
   push:
     branches: [main]
   pull_request:
-  # By hand, so a rotated token or a changed runner can be checked without a
+  # By hand, so a changed runner can be checked without a
   # fake commit.
   workflow_dispatch:
 
-# Read the checkout and nothing else; the gate writes nowhere. The sibling
-# fetch below carries its own token.
+# Read the checkout and nothing else; the gate writes nowhere.
 permissions:
   contents: read
 
@@ -29,20 +28,10 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      # The organisation's repositories are private, and a workflow's built-in
-      # GITHUB_TOKEN reaches only the repository it runs in. Cargo fetches the
-      # siblings over HTTPS, so the fetch is rewritten to carry a token that
-      # can read them. Without this the failure is a 404 that reads like a typo.
-      - name: Reach the organisation's private repositories
-        run: |
-          git config --global \
-            url."https://x-access-token:${{ secrets.XPUI_CI_TOKEN }}@github.com/".insteadOf \
-            "https://github.com/"
-
       # `rust-toolchain.toml` pins the channel, the components and these
       # targets, so rustup installs them on the first cargo call. They are
-      # named again because the gate *skips* a lint whose target is missing
-      # rather than failing — right on a laptop, wrong here.
+      # named again because the gate *skips* the `thumbv6m` lint when that
+      # target is missing rather than failing — right on a laptop, wrong here.
       - name: Install Rust
         run: |
           rustup show active-toolchain

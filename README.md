@@ -1,6 +1,11 @@
 [![CI](https://github.com/XPUI-Framework/xpui-chrome/actions/workflows/ci.yml/badge.svg)](https://github.com/XPUI-Framework/xpui-chrome/actions/workflows/ci.yml) [![MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-# `xpui-chrome`
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/logo-black.png">
+  <img src="assets/logo-white.png" alt="XPUI" width="64" height="64">
+</picture>
+
+# Chrome
 
 > [!WARNING]
 > Under heavy development. Not production-ready. The API can break without
@@ -9,10 +14,12 @@
 The eight themed components [`xpui`](https://github.com/XPUI-Framework/xpui-framework)
 asks a backend to paint — a list, a dialog, a slider, a progress bar, a
 header, a sub-header, a button-hint bar and a scroll indicator — painted from
-drawing primitives alone. A backend sitting on a *drawing* library has nothing
+drawing primitives alone. A backend sitting on a _drawing_ library has nothing
 to answer `xpui`'s `Chrome` trait with, and would otherwise have to write a
-widget toolkit before it could show anything; this crate is that toolkit, once, for all of them.
-`no_std`, and it depends on `xpui` and nothing else.
+widget toolkit before it could show anything; this crate is that toolkit,
+once, for all of them. `no_std`, and it depends on `xpui` and nothing else.
+
+Every document in this repository is listed in [docs/README.md](docs/README.md).
 
 ## Using it
 
@@ -62,14 +69,6 @@ in Rust, holding nothing it does not run. `./build-and-test.sh fix` formats
 in place first. How a change is reviewed is in
 [docs/contributing.md](docs/contributing.md).
 
-## Where next
-
-| | |
-|---|---|
-| [docs/components.md](docs/components.md) | the eight components, the four things a backend passes in, and the metrics, labels and key row they paint from |
-| [docs/design.md](docs/design.md) | the arguments behind choices the code states in one sentence |
-| [docs/contributing.md](docs/contributing.md) | building it, the gate, the five review steps, and how a commit is written |
-
 ## Where it sits
 
 Every arrow is a dependency in a `Cargo.toml`, and they all point inward
@@ -79,7 +78,7 @@ knowing it exists, and a firmware reaches whatever it needs directly rather
 than through whoever happens to sit above it.
 
 ```mermaid
-flowchart BT
+flowchart TD
   xpui["xpui<br/>the framework"]
   chrome["xpui-chrome<br/>components"]
   boards["xpui-boards<br/>seven devices"]

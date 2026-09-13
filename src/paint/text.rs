@@ -29,32 +29,44 @@ pub(super) fn draw_truncated(x: i32, y: i32, text: &str, font: Font, width: i32)
         return;
     }
 
-    // Char boundaries, never byte offsets: a multi-byte character cut in half
-    // is not a `&str`, and slicing one panics.
+    // The longest prefix that fits, found by halving rather than by walking.
+    // Each probe is a `text_width`, which on a backend across an FFI boundary
+    // is a call into C++ — per truncated label, per row, per frame. Walking is
+    // O(n) probes; this is O(log n), and both are exact.
     //
-    // Found by halving rather than by walking. Each probe is a `text_width`,
-    // which on a backend across an FFI boundary is a call into C++ — per
-    // truncated label, per row, per frame. Walking is O(n) probes; this is
-    // O(log n), and both are exact.
-    let boundaries: alloc::vec::Vec<usize> = text
-        .char_indices()
-        .map(|(index, _)| index)
-        .chain(core::iter::once(text.len()))
-        .collect();
-
+    // `low` and `high` are byte offsets kept on char boundaries: a multi-byte
+    // character cut in half is not a `&str`, and slicing one panics. Snapping
+    // a midpoint costs at most three steps and no list of boundaries.
     let mut low = 0;
-    let mut high = boundaries.len() - 1;
+    let mut fitted = 0;
+    let mut high = text.len();
     while low < high {
         // Biased upward, so the loop cannot stall on `low == high - 1`.
-        let mid = low + (high - low).div_ceil(2);
-        if font.text_width(&text[..boundaries[mid]]) <= room {
+        let mut mid = low + (high - low).div_ceil(2);
+        while !text.is_char_boundary(mid) {
+            mid += 1;
+        }
+        let measured = font.text_width(&text[..mid]);
+        if measured <= room {
             low = mid;
+            fitted = measured;
         } else {
             high = mid - 1;
+            while !text.is_char_boundary(high) {
+                high -= 1;
+            }
         }
     }
 
-    let mut buffer = alloc::string::String::from(&text[..boundaries[low]]);
-    buffer.push('…');
-    Renderer::draw_text(xpui::Point::new(x, y), &buffer, font.id(), font.style());
+    // Two runs, not one joined string: joining would allocate on every paint.
+    let prefix = &text[..low];
+    if !prefix.is_empty() {
+        Renderer::draw_text(xpui::Point::new(x, y), prefix, font.id(), font.style());
+    }
+    Renderer::draw_text(
+        xpui::Point::new(x + fitted, y),
+        ELLIPSIS,
+        font.id(),
+        font.style(),
+    );
 }

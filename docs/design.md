@@ -39,10 +39,11 @@ edge and an outline instead; `Metrics::selection_marker_width` is its width.
 `draw_option_popup` paints the rows and `option_popup_row_rect` reports where
 they are; both go through `popup_layout`. Deriving that geometry twice is how
 a dialog ends up painting row 3 where row 2 responds to a touch — a failure
-that looks completely fine until somebody taps it. A test asserts that every
-label sits at the same offset inside its own row, so geometry that drifts per
-row fails it; the absolute position is pinned by the `an_option_popup`
-transcript golden.
+that looks completely fine until somebody taps it.
+`every_dialog_row_is_painted_where_hit_testing_says_it_is` selects each row
+in turn and asserts that the rect `option_popup_row_rect` reports is exactly
+the one the row was outlined in, so a pixel of drift in position or size
+fails it.
 
 ## It depends on `xpui` and nothing else
 

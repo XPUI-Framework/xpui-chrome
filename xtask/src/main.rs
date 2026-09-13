@@ -37,9 +37,9 @@ use std::process::ExitCode;
 /// land a file.
 const LINE_LIMIT: usize = 400;
 
-/// Bare-metal targets this crate is linted for. `?` means "skip if the target
-/// is not installed, and say so" — the two architectures exist so a crate
-/// cannot be checked on one and not the other, not because one is stricter.
+/// Bare-metal targets this crate is linted for, and whether each is required:
+/// a required target that is not installed fails the gate, and any other is
+/// skipped with a note saying so.
 const BARE_METAL: [(&str, bool); 2] = [
     ("riscv32imc-unknown-none-elf", true),
     ("thumbv6m-none-eabi", false),
@@ -65,7 +65,7 @@ const KNOWN_LANGUAGES: [&str; 19] = [
 const NOT_COMPILED: [&str; 0] = [];
 
 /// Pages that are not a repository's front door.
-const NOT_A_FRONT_PAGE: [&str; 0] = [];
+const NOT_A_FRONT_PAGE: [&str; 1] = ["docs/README.md"];
 
 /// The root README's headings, in order.
 const README_ORDER: &[&str] = &[
@@ -73,7 +73,6 @@ const README_ORDER: &[&str] = &[
     "Using it",
     "Requirements",
     "Checking it",
-    "Where next",
     "Where it sits",
     "License",
 ];

@@ -13,6 +13,7 @@ use crate::metrics::Metrics;
 /// Deriving the geometry twice is how a dialog ends up painting row 3 where
 /// row 2 responds to a touch, and nothing about that failure looks wrong until
 /// somebody taps it.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct PopupLayout {
     /// The dialog's outer rectangle, border included.
     pub frame: Rect,
@@ -23,11 +24,10 @@ pub struct PopupLayout {
     /// How many rows actually fit on the panel.
     ///
     /// A dialog with more options than the screen is tall is drawn as tall as
-    /// it fits and no taller. Without this the frame runs off the bottom and
-    /// the rows past the edge are painted where nobody can see or touch them —
-    /// while `Modal` still gives every one of them a focus stop, so the
-    /// highlight walks off the panel. A twenty-entry language picker reaches
-    /// this on a 480x800 panel.
+    /// it fits and no taller, rather than running its frame off the bottom
+    /// edge. It does not scroll: an option at or past `visible` is neither
+    /// painted nor given a rect, so a `selected` there paints no highlight at
+    /// all. A twenty-entry language picker reaches this on a 480x800 panel.
     pub visible: usize,
 }
 

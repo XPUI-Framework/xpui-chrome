@@ -50,8 +50,6 @@
 #![cfg_attr(target_os = "none", no_std)]
 #![deny(missing_docs)]
 
-extern crate alloc;
-
 mod icons;
 mod labels;
 mod metrics;
