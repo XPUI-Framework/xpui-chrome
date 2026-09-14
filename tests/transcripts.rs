@@ -21,7 +21,7 @@
 //! control was drawn in. The pixels are proved downstream instead, where a
 //! backend and a board meet.
 //!
-//! `xpui-gallery`'s seventy board captures are those pixels. This is the half
+//! `xpui-gallery`'s eighty board captures are those pixels. This is the half
 //! that can be proved here.
 //!
 //! ```bash
