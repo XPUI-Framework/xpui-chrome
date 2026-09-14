@@ -56,7 +56,7 @@ the key row from the hardware, and `request_update` from the one thing that
 can get pixels onto a panel — the backend.
 [docs/reference/plain-chrome.md](docs/reference/plain-chrome.md) says what
 each is and why they are closures, and [docs/reference.md](docs/reference.md)
-is the whole API. Nothing is on crates.io yet, which is why the dependency above is
+is the whole API. Nothing is on [crates.io](https://crates.io/) yet, which is why the dependency above is
 a `git` URL.
 
 ## Checking it
@@ -66,7 +66,7 @@ a `git` URL.
 ```
 
 The checks themselves are in [`xtask/`](xtask/) — this repository's own list,
-in Rust, holding nothing it does not run. `./build-and-test.sh fix` formats
+in [Rust](https://rust-lang.org/), holding nothing it does not run. `./build-and-test.sh fix` formats
 in place first. How a change is reviewed is in
 [docs/contributing.md](docs/contributing.md).
 

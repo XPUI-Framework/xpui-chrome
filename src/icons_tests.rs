@@ -41,3 +41,40 @@ fn the_widest_row_is_the_middle_one() {
     assert_eq!(widest, 0);
     assert!(half_width(radius, 0) > half_width(radius, radius - 1));
 }
+
+/// A solid book's spine is paper over its ink cover. Drawn in ink, as the
+/// outline's is, it vanishes into the fill and the glyph is a black square.
+#[test]
+fn a_solid_book_keeps_its_spine() {
+    use super::{Icon, draw_icon};
+    use xpui::Point;
+    use xpui::host::IconRef;
+    use xpui::testing::{self, DrawOp, RectKind};
+
+    testing::install();
+    testing::reset();
+    let solid = IconRef {
+        variant: 1,
+        size: 16,
+        ..Icon::Book.into()
+    };
+    draw_icon(Point::new(0, 0), solid);
+
+    let fills: Vec<_> = testing::ops_log()
+        .into_iter()
+        .filter_map(|op| match op {
+            DrawOp::Rect {
+                rect,
+                kind: RectKind::Filled,
+                black,
+            } => Some((rect, black)),
+            _ => None,
+        })
+        .collect();
+    let [(cover, true), (spine, false)] = fills[..] else {
+        panic!("expected an ink cover, then a paper spine: {fills:?}");
+    };
+    assert_eq!(spine.width(), 1);
+    assert!(spine.x() > cover.x() && spine.x() < cover.x() + cover.width() - 1);
+    assert!(spine.y() > cover.y() && spine.y() + spine.height() < cover.y() + cover.height());
+}

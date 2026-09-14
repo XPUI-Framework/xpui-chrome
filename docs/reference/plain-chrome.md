@@ -2,7 +2,7 @@
 
 `xpui` deliberately has no opinion about what a list row looks like. It asks,
 and a backend answers through its `Chrome` implementation. A backend sitting on
-a component library answers by calling that library, and a Rust screen ends up
+a component library answers by calling that library, and a [Rust](https://rust-lang.org/) screen ends up
 pixel-identical to a native one. A backend sitting on a *drawing* library has
 nothing to call, and this macro is what it answers with: one invocation writes
 the whole implementation from four things the backend passes in.
@@ -98,10 +98,10 @@ One `impl Chrome for Backend`, whose eleven methods each call this crate:
 | `draw_button_hints` | [`draw_button_hints`](painting.md#draw_button_hints), with `metrics`, `labels` and `keys` |
 | `draw_progress_bar` | [`draw_progress_bar`](painting.md#draw_progress_bar) |
 | `draw_slider` | [`draw_slider`](painting.md#draw_slider) |
-| `draw_scroll_indicator` | [`draw_scroll_indicator`](painting.md#draw_scroll_indicator) |
-| `draw_list` | [`draw_list`](painting.md#draw_list) |
-| `draw_option_popup` | [`draw_option_popup`](painting.md#draw_option_popup) |
-| `option_popup_row_rect` | [`option_popup_row_rect`](painting.md#option_popup_row_rect) |
+| `draw_scroll_indicator` | [`draw_scroll_indicator`](painting-lists.md#draw_scroll_indicator) |
+| `draw_list` | [`draw_list`](painting-lists.md#draw_list) |
+| `draw_option_popup` | [`draw_option_popup`](painting-lists.md#draw_option_popup) |
+| `option_popup_row_rect` | [`option_popup_row_rect`](layout.md#option_popup_row_rect) |
 | `request_update` | the `request_update` expression |
 
 The implementation needs no `use` in the backend's crate: the macro names every
@@ -112,7 +112,7 @@ functions, so a backend with *some* components of its own can take only the
 ones it lacks rather than the whole implementation. The other two are not on
 offer: `metric` is answered by `Metrics::metric`, and `request_update` is one of
 the four things a backend passes in. No backend takes that route yet:
-`xpui-embedded-graphics` takes all nine through the macro, and the FreeInkUI
+`xpui-embedded-graphics` takes all nine through the macro, and the [FreeInkUI](https://github.com/Free-Ink/freeink-sdk/tree/main/libs/ui/FreeInkUI)
 backend answers `Chrome` over its own C ABI without depending on this crate.
 
 **Example — values in statics**

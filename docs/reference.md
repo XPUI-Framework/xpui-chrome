@@ -13,9 +13,11 @@ parameters, examples you can copy, and a picture of what it draws. The gate
 checks every page against the code, so what a page says an item is, the compiler
 agrees with, and every `rust` block on them is compiled and run as a doctest.
 
-| Page | Holds |
-|---|---|
-| [plain chrome](reference/plain-chrome.md) | `plain_chrome!`, and the four things a backend passes in |
-| [painting](reference/painting.md) | the eight components: `draw_header`, `draw_sub_header`, `draw_list`, `draw_option_popup`, `draw_slider`, `draw_progress_bar`, `draw_scroll_indicator`, `draw_button_hints`; and the layout behind them, `row_height`, `rows_that_fit`, `popup_layout`, `PopupLayout`, `option_popup_row_rect` |
-| [metrics and labels](reference/metrics-and-labels.md) | `Metrics` and its three presets, `Labels`, and the re-exported `KeyRow` and `RowKey` |
-| [icons](reference/icons.md) | `Icon`, `draw_icon` and `icon_size` |
+| Group | Page | Holds |
+|---|---|---|
+| Backend | [plain chrome](reference/plain-chrome.md) | `plain_chrome!`, and the four things a backend passes in |
+| Painting | [painting](reference/painting.md) | the header, the controls and the hint bar: `draw_header`, `draw_sub_header`, `draw_slider`, `draw_progress_bar`, `draw_button_hints` |
+| | [painting lists](reference/painting-lists.md) | rows of content: `draw_list`, `draw_option_popup`, `draw_scroll_indicator` |
+| Layout & sizing | [layout](reference/layout.md) | where a list's rows and a dialog's rows land: `row_height`, `rows_that_fit`, `popup_layout`, `PopupLayout`, `option_popup_row_rect` |
+| | [metrics and labels](reference/metrics-and-labels.md) | `Metrics` and its three presets, `Labels`, and the re-exported `KeyRow` and `RowKey` |
+| Icons | [icons](reference/icons.md) | `Icon`, `draw_icon` and `icon_size` |

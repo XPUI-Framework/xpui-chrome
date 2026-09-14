@@ -65,7 +65,7 @@ found. No self-attribution.
 
 `xpui-embedded-graphics` in `xpui-backends`, the simulator and the gallery
 depend on this crate through a `git` dependency on `main`, so a change to a
-public item or to what a component paints reaches all three. The FreeInkUI
+public item or to what a component paints reaches all three. The [FreeInkUI](https://github.com/Free-Ink/freeink-sdk/tree/main/libs/ui/FreeInkUI)
 backend answers `Chrome` over its own C ABI and never sees one. Before
 pushing one, run the umbrella:
 

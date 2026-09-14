@@ -1,10 +1,10 @@
 //! What each component draws, committed as a transcript.
 //!
 //! `tests/paint.rs` asserts *properties* — that the selected row has a marker,
-//! that a blank key gets no word. Forty of them, each written by hand, and
+//! that a blank key gets no word. Forty-one of them, each written by hand, and
 //! between them they leave the thing most likely to change unasserted: **where
 //! everything is**. Move the header's baseline two pixels and every one of the
-//! forty still passes.
+//! forty-one still passes.
 //!
 //! A transcript catches that, because it is the whole ordered draw-call log
 //! rather than a sampled claim about it.

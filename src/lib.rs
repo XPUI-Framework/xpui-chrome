@@ -64,7 +64,7 @@ pub use paint::{
     draw_scroll_indicator, draw_slider, draw_sub_header, option_popup_row_rect, popup_layout,
     row_height, rows_that_fit,
 };
-/// Re-exported so a backend needs one import for the three things
+/// Re-exported so a backend needs one import for the four things
 /// [`plain_chrome!`] asks it for, though this one is `xpui`'s: a key row is a
 /// fact about hardware, not about painting.
 pub use xpui::host::{KeyRow, RowKey};
@@ -256,6 +256,10 @@ mod guides {
     pub mod reference_plain_chrome {}
     #[doc = include_str!("../docs/reference/painting.md")]
     pub mod reference_painting {}
+    #[doc = include_str!("../docs/reference/painting-lists.md")]
+    pub mod reference_painting_lists {}
+    #[doc = include_str!("../docs/reference/layout.md")]
+    pub mod reference_layout {}
     #[doc = include_str!("../docs/reference/metrics-and-labels.md")]
     pub mod reference_metrics_and_labels {}
     #[doc = include_str!("../docs/reference/icons.md")]

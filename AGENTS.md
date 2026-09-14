@@ -56,8 +56,8 @@ the targets `BARE_METAL` names; they are the only checks that reach its
 - **Every `pub` item is documented.** `#![deny(missing_docs)]` is on.
 - **A file under `src/` is at most 400 lines.** `xtask/src/tree.rs`
   and `src/icons.rs` are both within fifteen lines of it.
-- **Twenty-six of `tests/paint.rs`'s forty tests assert on recorded draw
-  calls**; nine of the other fourteen are `Metrics` arithmetic. The
+- **Twenty-seven of `tests/paint.rs`'s forty-one tests assert on recorded
+  draw calls**; nine of the other fourteen are `Metrics` arithmetic. The
   thirty-nine goldens in `tests/snapshots/` are call transcripts. A
   documentation change never touches them; if one changes, something else
   did.
@@ -68,7 +68,7 @@ the targets `BARE_METAL` names; they are the only checks that reach its
 |---|---|
 | [`README.md`](README.md) | its `rust` fence is a doctest, mounted by `src/lib.rs` |
 | [`docs/README.md`](docs/README.md) | its paths resolve; the README-heading check exempts it, because it is the index of `docs/`, not a front page |
-| [`docs/reference.md`](docs/reference.md) and [`docs/reference/`](docs/reference/) | `the reference mirrors rustdoc`: every public name has a section whose abstract and declaration match the source; `src/lib.rs` mounts every page, so each `rust` fence is a doctest |
+| [`docs/reference.md`](docs/reference.md) and its six pages in [`docs/reference/`](docs/reference/): [`plain-chrome.md`](docs/reference/plain-chrome.md), [`painting.md`](docs/reference/painting.md), [`painting-lists.md`](docs/reference/painting-lists.md), [`layout.md`](docs/reference/layout.md), [`metrics-and-labels.md`](docs/reference/metrics-and-labels.md), [`icons.md`](docs/reference/icons.md) | `the reference mirrors rustdoc`: every public name has a section whose abstract and declaration match the source; `src/lib.rs` mounts every page, so each `rust` fence is a doctest |
 | [`docs/components.md`](docs/components.md) | a pointer to the reference pages; `documented paths resolve`, and `src/lib.rs` mounts it |
 | [`docs/design.md`](docs/design.md) | mounted by `src/lib.rs`; likewise |
 | [`docs/contributing.md`](docs/contributing.md) | every path and command it gives resolves; the umbrella command is `xpui-dev`'s |

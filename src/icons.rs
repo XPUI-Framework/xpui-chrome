@@ -361,20 +361,23 @@ fn book(bounds: Rect, solid: bool) {
     let middle = centre(bounds);
     let cover = Rect::new(middle.x - width / 2, middle.y - height / 2, width, height);
 
-    if solid {
-        Renderer::fill_rect(cover, true);
-    } else {
-        Renderer::stroke_rect(cover);
-    }
-
     // The spine, a third of the way in — what makes it a book rather than a
     // rectangle.
+    let spine = cover.x() + cover.width() / 3;
+
+    if solid {
+        // In paper, as the moon's bite is: an ink spine on an ink cover is a
+        // black square. Inset so the cover still closes above and below it.
+        Renderer::fill_rect(cover, true);
+        let inset = Rect::new(spine, cover.y() + 2, 1, (cover.height() - 4).max(1));
+        Renderer::fill_rect(inset, false);
+        return;
+    }
+
+    Renderer::stroke_rect(cover);
     Renderer::draw_line(
-        Point::new(cover.x() + cover.width() / 3, cover.y()),
-        Point::new(
-            cover.x() + cover.width() / 3,
-            cover.y() + cover.height() - 1,
-        ),
+        Point::new(spine, cover.y()),
+        Point::new(spine, cover.y() + cover.height() - 1),
     );
 }
 
