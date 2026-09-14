@@ -83,5 +83,5 @@ describes the layout it expects.
 
 ## Where to read first
 
-[components.md](components.md) is what each function paints and what it paints
+[The reference](reference.md) is what each function paints and what it paints
 from; [design.md](design.md) is why the choices are what they are.

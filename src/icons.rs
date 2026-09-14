@@ -49,9 +49,10 @@ pub enum Icon {
 }
 
 impl Icon {
-    /// Every icon. `from_kind` looks a kind up here, so a variant missing
-    /// from this array is undrawable: `icon_size` answers 0 and `draw_icon`
-    /// returns early.
+    /// Every icon, in the order of their kinds.
+    ///
+    /// `from_kind` looks a kind up here, so a variant missing from this array
+    /// is undrawable: `icon_size` answers 0 and `draw_icon` returns early.
     pub const ALL: [Icon; 12] = [
         Icon::Sun,
         Icon::Moon,

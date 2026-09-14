@@ -23,7 +23,7 @@ about which backend called it.
 ```
 
 ```text
-format · file sizes · crates are tested · READMEs warn · prose is compiled · documented paths resolve · rustdoc links resolve · documented commands resolve · lint · tests · doctests · README sections · AGENTS.md · published crates deny missing_docs · comment blocks · comment narration
+format · file sizes · crates are tested · READMEs warn · prose is compiled · documented paths resolve · rustdoc links resolve · the reference mirrors rustdoc · documented commands resolve · lint · tests · doctests · README sections · AGENTS.md · published crates deny missing_docs · comment blocks · comment narration
 ```
 
 There is no `all` mode; this list is the whole of it, and a last stage,
@@ -68,7 +68,8 @@ the targets `BARE_METAL` names; they are the only checks that reach its
 |---|---|
 | [`README.md`](README.md) | its `rust` fence is a doctest, mounted by `src/lib.rs` |
 | [`docs/README.md`](docs/README.md) | its paths resolve; the README-heading check exempts it, because it is the index of `docs/`, not a front page |
-| [`docs/components.md`](docs/components.md) | `documented paths resolve`; `src/lib.rs` mounts it, which compiles nothing while it carries no `rust` fence |
+| [`docs/reference.md`](docs/reference.md) and [`docs/reference/`](docs/reference/) | `the reference mirrors rustdoc`: every public name has a section whose abstract and declaration match the source; `src/lib.rs` mounts every page, so each `rust` fence is a doctest |
+| [`docs/components.md`](docs/components.md) | a pointer to the reference pages; `documented paths resolve`, and `src/lib.rs` mounts it |
 | [`docs/design.md`](docs/design.md) | mounted by `src/lib.rs`; likewise |
 | [`docs/contributing.md`](docs/contributing.md) | every path and command it gives resolves; the umbrella command is `xpui-dev`'s |
 | `AGENTS.md` | the stage list above is compared to what the gate runs |

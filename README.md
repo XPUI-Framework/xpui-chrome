@@ -54,8 +54,9 @@ Four things go in because four parties own them: the metrics come from
 whoever knows the panel, the labels from whoever knows the user's language,
 the key row from the hardware, and `request_update` from the one thing that
 can get pixels onto a panel — the backend.
-[docs/components.md](docs/components.md) says what each is and why they are
-closures. Nothing is on crates.io yet, which is why the dependency above is
+[docs/reference/plain-chrome.md](docs/reference/plain-chrome.md) says what
+each is and why they are closures, and [docs/reference.md](docs/reference.md)
+is the whole API. Nothing is on crates.io yet, which is why the dependency above is
 a `git` URL.
 
 ## Checking it

@@ -45,7 +45,7 @@ pub fn row_height<'a>(
     }
 }
 
-/// The themed list. Only rows that fit entirely are drawn.
+/// The themed list, drawing only the rows that fit entirely inside `rect`.
 pub fn draw_list<'a>(
     metrics: &Metrics,
     rect: Rect,

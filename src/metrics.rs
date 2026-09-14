@@ -22,8 +22,10 @@ pub struct Metrics {
     pub header_height: i32,
     /// The standard gap between stacked elements.
     pub vertical_spacing: i32,
-    /// The small step, for space *within* a group. Must stay smaller than
-    /// `vertical_spacing` or a heading reads as belonging to what sits above.
+    /// The small step, for space *within* a group.
+    ///
+    /// Must stay smaller than `vertical_spacing`, or a heading reads as
+    /// belonging to what sits above.
     pub spacing_small: i32,
     /// Height reserved at the bottom for button hints.
     pub button_hints_height: i32,
@@ -36,9 +38,11 @@ pub struct Metrics {
     pub list_row_height_with_subtitle: i32,
     /// Space left between one row and the next.
     pub list_row_gap: i32,
-    /// Width of the bar marking the selected row. Selection cannot be drawn by
-    /// inverting the row: [`Canvas::draw_text`](xpui::host::Canvas::draw_text)
-    /// always paints ink, so ink-on-ink would erase the label.
+    /// Width of the bar marking the selected row.
+    ///
+    /// Selection cannot be drawn by inverting the row:
+    /// [`Canvas::draw_text`](xpui::host::Canvas::draw_text) always paints ink,
+    /// so ink-on-ink would erase the label.
     pub selection_marker_width: i32,
 
     /// Height of the band a sub-header needs — the heading's own line, not a
@@ -55,8 +59,10 @@ pub struct Metrics {
     /// Smallest comfortably tappable dimension.
     pub min_touch_size: i32,
 
-    /// The slider knob's width. `xpui` converts a touch to a value with it,
-    /// so it must be the number `draw_slider` paints with.
+    /// The slider knob's width.
+    ///
+    /// `xpui` converts a touch to a value with it, so it must be the number
+    /// `draw_slider` paints with.
     pub slider_knob_width: i32,
     /// The slider knob's height, and so the least height a slider's rect
     /// needs to show the knob whole.

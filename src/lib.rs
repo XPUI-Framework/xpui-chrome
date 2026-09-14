@@ -250,4 +250,14 @@ mod guides {
     pub mod components {}
     #[doc = include_str!("../docs/design.md")]
     pub mod design {}
+    #[doc = include_str!("../docs/reference.md")]
+    pub mod reference {}
+    #[doc = include_str!("../docs/reference/plain-chrome.md")]
+    pub mod reference_plain_chrome {}
+    #[doc = include_str!("../docs/reference/painting.md")]
+    pub mod reference_painting {}
+    #[doc = include_str!("../docs/reference/metrics-and-labels.md")]
+    pub mod reference_metrics_and_labels {}
+    #[doc = include_str!("../docs/reference/icons.md")]
+    pub mod reference_icons {}
 }

@@ -2,7 +2,7 @@
 
 The arguments behind choices the code states in one sentence. Each section
 names the item that carries the sentence. What the components are, and what
-a backend hands them, is in [components.md](components.md).
+a backend hands them, is in [the reference](reference.md).
 
 ## The knob carries the focus mark
 
@@ -26,7 +26,7 @@ wants to be, and it is illegal: both the trait and the type parameter are
 foreign to this crate, so the orphan rule rejects it (`E0210`). The macro
 writes the same impl into the backend's own crate, where it is allowed. Which
 of the trait's methods are also plain functions, for a backend that wants
-only some, is in [components.md](components.md).
+only some, is in [plain chrome](reference/plain-chrome.md#what-it-writes).
 
 ## Selection is a marker, not an inversion
 
