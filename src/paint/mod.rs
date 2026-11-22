@@ -4,6 +4,7 @@ mod controls;
 mod header;
 mod list;
 mod popup;
+mod scale;
 mod text;
 
 pub use controls::{draw_button_hints, draw_progress_bar, draw_scroll_indicator, draw_slider};

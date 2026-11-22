@@ -4,6 +4,7 @@
 use xpui::host::{ControlState, Hint, HintWord};
 use xpui::{Font, Rect, Renderer};
 
+use super::scale::{mul_div, scale};
 use super::text::{centred_y, draw_truncated};
 use xpui::host::{KeyRow, RowKey};
 
@@ -103,7 +104,8 @@ pub fn draw_progress_bar(_metrics: &Metrics, rect: Rect, current: u32, total: u3
     }
 
     let inner = rect.width() - 2;
-    let filled = (inner as i64 * current.min(total) as i64 / total as i64) as i32;
+    // At most `inner`, since `current <= total`.
+    let filled = mul_div(inner as u32, current.min(total), total) as i32;
     if filled > 0 {
         Renderer::fill_rect(
             Rect::new(rect.x() + 1, rect.y() + 1, filled, rect.height() - 2),
@@ -125,11 +127,7 @@ fn slider_knob(metrics: &Metrics, rect: Rect, value: i32, max: i32) -> Rect {
     // for its own knob, and the knob sits outside the widget while the value
     // snaps between the extremes.
     let travel = (rect.width() - inset * 2 - metrics.slider_knob_width).max(1);
-    let along = if max > 0 {
-        (travel as i64 * value.clamp(0, max) as i64 / max as i64) as i32
-    } else {
-        0
-    };
+    let along = scale(travel, value, max);
     // Kept inside the widget even when the widget is narrower than the knob,
     // so it cannot overlap whatever sits beside it.
     let width = metrics.slider_knob_width.min(rect.width());
@@ -214,12 +212,12 @@ pub fn draw_scroll_indicator(
     // maximum so a short track does not get a thumb longer than itself. The
     // indicator is drawn *after* the scroll view lifts its clip, so a spill
     // lands on whatever sits below the viewport rather than being trimmed away.
-    let thumb_height = ((track.height() as i64 * visible as i64 / content as i64)
-        .max(metrics.min_touch_size as i64 / 4) as i32)
+    let thumb_height = scale(track.height(), visible, content)
+        .max(metrics.min_touch_size / 4)
         .min(track.height());
     let travel = (track.height() - thumb_height).max(0);
     let scrollable = (content - visible).max(1);
-    let along = (travel as i64 * offset.clamp(0, scrollable) as i64 / scrollable as i64) as i32;
+    let along = scale(travel, offset, scrollable);
 
     Renderer::fill_rect(
         Rect::new(track.x(), track.y() + along, track.width(), thumb_height),
